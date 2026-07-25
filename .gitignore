@@ -6,3 +6,6 @@ out/
 
 # Local-only design sources — media/ bundles are committed instead
 v0_Screens/
+
+# Local-only backups of design sources
+.backup/

@@ -57,7 +57,6 @@ export class ControlPanelProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        // Send initial config
         this.updateConfig();
     }
 

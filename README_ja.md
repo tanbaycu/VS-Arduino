@@ -60,6 +60,9 @@
 ### ボード & ライブラリマネージャー
 - モダンな UI でプラットフォームとライブラリを検索・インストール・更新・ダウングレード・アンインストール。
 - バージョン単位の選択で依存関係を正確にコントロールできます。
+- インストール済みの項目を右クリックして **Examples** を選ぶと、同梱のサンプルスケッチを入れ子のリストから辿れます。
+- サンプルを開くとまずスケッチブックへコピーされ、その後で現在のウィンドウか新しいウィンドウかを尋ねられます。
+- 更新可能なボードパッケージとライブラリは 1 つの通知にまとめられ、その場で更新できます。
 
 ### 自動 IntelliSense
 - `#include` の構成が変わるたびに C/C++ 設定を自動生成・更新するため、コード補完は常に選択中のボードと一致します。
@@ -110,6 +113,10 @@
 | `vs-arduino.sketchbookPath` | カスタムライブラリの検索に使う Arduino スケッチブックのパス | `""` |
 | `vs-arduino.arduinoDataDir` | ライブラリとスケッチ用のカスタム Arduino ユーザーディレクトリ | `""` |
 | `vs-arduino.baudRate` | Serial Monitor / Plotter の既定ボーレート | `"115200"` |
+| `vs-arduino.exampleOpenTarget` | サンプルスケッチを開く場所: `ask` / `newWindow` / `currentWindow` | `"ask"` |
+| `vs-arduino.exampleOpenAskToSetDefault` | 選んだウィンドウを既定にするか確認する | `true` |
+| `vs-arduino.checkForUpdates` | 起動時にボードパッケージとライブラリの更新を確認する | `true` |
+| `vs-arduino.ignoredUpdates` | 更新通知の対象から除外するボードパッケージとライブラリ | `[]` |
 
 高度なデバッグ設定(ツールチェーンパス、GDB サーバー、レジスタ表示形式、RTOS パネル)は **Cortex-Debug** 設定セクションで調整できます。
 

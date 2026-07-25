@@ -9,6 +9,13 @@ import * as os from 'os';
 
 const execAsync = promisify(exec);
 
+export type OutdatedItem = {
+    id: string;
+    name: string;
+    installedVersion: string;
+    latestVersion: string;
+};
+
 export class ArduinoCliManager {
     constructor(
         private context: vscode.ExtensionContext,
@@ -17,7 +24,7 @@ export class ArduinoCliManager {
 
     public async initialize(): Promise<void> {
         this.outputChannel.appendLine('Checking for arduino-cli...');
-        
+
         try {
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const configuredPath = config.get<string>('arduinoCliPath');
@@ -28,15 +35,13 @@ export class ArduinoCliManager {
                 return;
             }
 
-            // Check system PATH
             this.outputChannel.appendLine('Checking system PATH for arduino-cli...');
             const { stdout } = await execAsync('arduino-cli version');
             this.outputChannel.appendLine(`Found arduino-cli in PATH: ${stdout.trim()}`);
-            
-            // Save to configuration
+
             await config.update('arduinoCliPath', 'arduino-cli', vscode.ConfigurationTarget.Global);
             this.outputChannel.appendLine('Saved "arduino-cli" to workspace configuration.');
-            
+
         } catch (error) {
             this.outputChannel.appendLine('arduino-cli not found in PATH or configured path is invalid.');
             await this.promptUserForCli();
@@ -153,7 +158,7 @@ export class ArduinoCliManager {
 
     private async downloadArduinoCli(): Promise<void> {
         this.outputChannel.appendLine('Downloading arduino-cli...');
-        
+
         try {
             const extensionFolder = this.context.globalStorageUri.fsPath;
             await fsPromises.mkdir(extensionFolder, { recursive: true });
@@ -187,7 +192,6 @@ export class ArduinoCliManager {
             }
             this.outputChannel.appendLine('Extraction completed.');
 
-            // Clean up archive file
             await fsPromises.unlink(archivePath).catch(() => {});
 
             const binaryName = isWindows ? 'arduino-cli.exe' : 'arduino-cli';
@@ -205,7 +209,7 @@ export class ArduinoCliManager {
             this.outputChannel.appendLine(`Configured arduinoCliPath: ${binaryPath}`);
 
             vscode.window.showInformationMessage(`arduino-cli v${version} installed and configured successfully!`);
-            
+
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             this.outputChannel.appendLine(`Failed to install arduino-cli: ${errorMessage}`);
@@ -234,7 +238,7 @@ export class ArduinoCliManager {
                         return reject(new Error('Redirected without location header'));
                     }
                 }
-                
+
                 if (response.statusCode !== 200) {
                     file.close();
                     return reject(new Error(`Failed to download, status code: ${response.statusCode}`));
@@ -264,10 +268,10 @@ export class ArduinoCliManager {
             const selectedPath = uris[0].fsPath;
             try {
                 await this.verifyCliPath(selectedPath);
-                
+
                 const config = vscode.workspace.getConfiguration('vs-arduino');
                 await config.update('arduinoCliPath', selectedPath, vscode.ConfigurationTarget.Global);
-                
+
                 this.outputChannel.appendLine(`Saved custom path to configuration: ${selectedPath}`);
                 vscode.window.showInformationMessage('arduino-cli configured successfully!');
             } catch (error) {
@@ -284,7 +288,7 @@ export class ArduinoCliManager {
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const cliPath = config.get<string>('arduinoCliPath') || 'arduino-cli';
             const dataDir = config.get<string>('arduinoDataDir');
-            
+
             const combinedArgs = [...configArg, ...args];
             const mappedArgs = combinedArgs.map(a => a.includes(' ') ? `"${a}"` : a);
             const env = dataDir ? { ...process.env, ARDUINO_DIRECTORIES_USER: dataDir } : process.env;
@@ -312,7 +316,7 @@ export class ArduinoCliManager {
                     reject(new Error(`Command failed with exit code ${code}\n${stderrStr}`));
                 }
             });
-            
+
             child.on('error', (err: Error) => {
                 reject(err);
             });
@@ -449,6 +453,95 @@ export class ArduinoCliManager {
         }
     }
 
+    public async getOutdated(): Promise<{ libraries: OutdatedItem[]; cores: OutdatedItem[] }> {
+        try {
+            const data = await this.runCliCommandJson(['outdated', '--format', 'json']);
+            const cores: OutdatedItem[] = (data?.platforms || []).map((platform: any) => ({
+                id: platform.id,
+                name: platform.releases?.[platform.installed_version]?.name || platform.id,
+                installedVersion: platform.installed_version || '',
+                latestVersion: platform.latest_version || ''
+            })).filter((item: OutdatedItem) => item.latestVersion && item.latestVersion !== item.installedVersion);
+
+            const libraryEntries = data?.libraries || data?.installed_libraries || [];
+            const libraries: OutdatedItem[] = libraryEntries.map((entry: any) => {
+                const lib = entry.library ?? entry;
+                return {
+                    id: lib.name,
+                    name: lib.name,
+                    installedVersion: lib.version || '',
+                    latestVersion: entry.release?.version || ''
+                };
+            }).filter((item: OutdatedItem) => item.latestVersion && item.latestVersion !== item.installedVersion);
+
+            return { libraries, cores };
+        } catch (error) {
+            this.outputChannel.appendLine(`Error checking for outdated packages: ${error}`);
+            return { libraries: [], cores: [] };
+        }
+    }
+
+    public async upgradeLibrary(name: string): Promise<void> {
+        this.outputChannel.show(true);
+        this.outputChannel.appendLine(`Upgrading library ${name}...`);
+        await this.runCliCommandStream(['lib', 'upgrade', name]);
+    }
+
+    public async upgradeCore(id: string): Promise<void> {
+        this.outputChannel.show(true);
+        this.outputChannel.appendLine(`Upgrading core ${id}...`);
+        await this.runCliCommandStream(['core', 'upgrade', id]);
+    }
+
+    public async getLibraryExamples(name: string): Promise<any[]> {
+        try {
+            const data = await this.runCliCommandJson(['lib', 'examples', name, '--format', 'json']);
+            return data?.examples || [];
+        } catch (error) {
+            this.outputChannel.appendLine(`Error getting library examples: ${error}`);
+            return [];
+        }
+    }
+
+    public async getCoreExamples(coreId: string): Promise<any[]> {
+        try {
+            const data = await this.runCliCommandJson(['core', 'list', '--format', 'json']);
+            const platform = (data?.platforms || []).find((p: any) => p.id === coreId);
+            const release = platform?.releases?.[platform?.installed_version];
+            const fqbn = (release?.boards || []).find((b: any) => b.fqbn)?.fqbn;
+            if (!fqbn) {
+                return [];
+            }
+
+            const result = await this.runCliCommandJson(['lib', 'examples', '-b', fqbn, '--format', 'json']);
+            const [vendor, arch] = coreId.split(':');
+            const marker = `/packages/${vendor}/hardware/${arch}/`.toLowerCase();
+
+            return (result?.examples || []).filter((entry: any) => {
+                const location = entry.library?.location;
+                if (location !== 'platform' && location !== 'ref_platform') {
+                    return false;
+                }
+                const installDir = String(entry.library?.install_dir || '').replace(/\\/g, '/').toLowerCase();
+                return installDir.includes(marker);
+            });
+        } catch (error) {
+            this.outputChannel.appendLine(`Error getting core examples: ${error}`);
+            return [];
+        }
+    }
+
+    public async getSketchbookDir(): Promise<string | null> {
+        try {
+            const data = await this.runCliCommandJson(['config', 'dump', '--format', 'json']);
+            const directories = data?.config?.directories ?? data?.directories;
+            return directories?.user || null;
+        } catch (error) {
+            this.outputChannel.appendLine(`Error getting sketchbook directory: ${error}`);
+            return null;
+        }
+    }
+
     public async getReadmeContent(installDir: string): Promise<string | null> {
         if (!installDir) return null;
         try {
@@ -496,14 +589,14 @@ export class ArduinoCliManager {
             path.join(os.homedir(), '.arduino15', 'arduino-cli.yaml'),
             os.platform() === 'win32' ? path.join(os.homedir(), 'AppData', 'Local', 'Arduino15', 'arduino-cli.yaml') : ''
         ];
-        
+
         for (const p of pathsToCheck) {
             if (!p) continue;
             try {
                 await fsPromises.stat(p);
                 return ['--config-file', p];
             } catch (e) {
-                // Ignore missing file
+
             }
         }
         return [];
@@ -514,7 +607,7 @@ export class ArduinoCliManager {
         const args = ['compile', '--no-color', ...configArg, '-b', fqbn, sketchPath];
         if (optimizeForDebug) { args.push('--optimize-for-debug'); }
         if (buildPath) { args.push('--build-path', buildPath); }
-        
+
         const config = vscode.workspace.getConfiguration('vs-arduino');
         const sketchbookPath = config.get<string>('sketchbookPath');
         if (sketchbookPath) {
@@ -526,7 +619,7 @@ export class ArduinoCliManager {
     public async upload(fqbn: string, port: string, sketchPath: string): Promise<{ stdout: string, stderr: string }> {
         const configArg = await this.getConfigFileArg();
         const args = ['compile', '--upload', '--no-color', ...configArg, '-b', fqbn, '-p', port, sketchPath];
-        
+
         const config = vscode.workspace.getConfiguration('vs-arduino');
         const sketchbookPath = config.get<string>('sketchbookPath');
         if (sketchbookPath) {
@@ -540,7 +633,7 @@ export class ArduinoCliManager {
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const cliPath = config.get<string>('arduinoCliPath') || 'arduino-cli';
             const dataDir = config.get<string>('arduinoDataDir');
-            
+
             const mappedArgs = args.map(a => a.includes(' ') ? `"${a}"` : a);
             const env = dataDir ? { ...process.env, ARDUINO_DIRECTORIES_USER: dataDir } : process.env;
             const child = spawn(`"${cliPath}"`, mappedArgs, { shell: true, env });
@@ -569,7 +662,7 @@ export class ArduinoCliManager {
                     reject(err);
                 }
             });
-            
+
             child.on('error', (err: Error) => {
                 reject(err);
             });

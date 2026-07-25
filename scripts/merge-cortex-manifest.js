@@ -1,5 +1,3 @@
-// One-off migration script: merges the embedded cortex-debug core's manifest
-// contributions into the host VS Arduino package.json.
 const fs = require('fs');
 const path = require('path');
 

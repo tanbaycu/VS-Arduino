@@ -28,10 +28,6 @@ export function deactivateCortexDebugCore(): void {
     coreModule = undefined;
 }
 
-// The cortex-debug core resolves every asset (dist/grapher.bundle.js,
-// resources/, support/, webview/) relative to its ExtensionContext paths.
-// Re-rooting extensionPath/extensionUri keeps those lookups inside the
-// embedded core folder while all other context members delegate to the host.
 function createCoreExtensionContext(context: vscode.ExtensionContext, coreRoot: string): vscode.ExtensionContext {
     const coreUri = vscode.Uri.file(coreRoot);
     return new Proxy(context, {

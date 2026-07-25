@@ -60,6 +60,9 @@
 ### Board & Library Manager
 - Tìm kiếm, cài đặt, cập nhật, hạ cấp và gỡ platform lẫn thư viện qua giao diện hiện đại.
 - Chọn từng phiên bản cụ thể để kiểm soát chính xác các phụ thuộc.
+- Nhấp chuột phải vào mục đã cài đặt và chọn **Examples** để duyệt các sketch ví dụ đi kèm theo dạng danh sách lồng nhau.
+- Khi mở một ví dụ, sketch được sao chép vào sketchbook trước, sau đó hỏi bạn muốn mở ở cửa sổ hiện tại hay cửa sổ mới.
+- Board và thư viện đã lỗi thời được gộp chung vào một thông báo kèm nút cập nhật nhanh.
 
 ### IntelliSense tự động
 - Cấu hình C/C++ được sinh và làm mới âm thầm mỗi khi tập `#include` thay đổi, nên gợi ý code luôn khớp với board đang chọn.
@@ -110,6 +113,10 @@ Cài từ một trong hai kho:
 | `vs-arduino.sketchbookPath` | Đường dẫn thư mục sketchbook, dùng để tìm thư viện tự tạo | `""` |
 | `vs-arduino.arduinoDataDir` | Thư mục dữ liệu Arduino tuỳ chỉnh cho thư viện và sketch | `""` |
 | `vs-arduino.baudRate` | Tốc độ baud mặc định cho Serial Monitor và Plotter | `"115200"` |
+| `vs-arduino.exampleOpenTarget` | Nơi mở sketch ví dụ: `ask`, `newWindow` hoặc `currentWindow` | `"ask"` |
+| `vs-arduino.exampleOpenAskToSetDefault` | Hỏi có đặt cửa sổ vừa chọn làm mặc định hay không | `true` |
+| `vs-arduino.checkForUpdates` | Kiểm tra bản cập nhật cho board và thư viện đã cài khi khởi động | `true` |
+| `vs-arduino.ignoredUpdates` | Danh sách board và thư viện không nhận thông báo cập nhật | `[]` |
 
 Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, định dạng thanh ghi, panel RTOS) có thể tinh chỉnh trong mục settings **Cortex-Debug**.
 

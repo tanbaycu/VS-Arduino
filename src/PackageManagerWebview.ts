@@ -31,7 +31,6 @@ export class PackageManagerWebview {
             }
         );
 
-        // Set Icon
         panel.iconPath = vscode.Uri.joinPath(
             extensionUri,
             'media',
@@ -88,7 +87,7 @@ export class PackageManagerWebview {
             }
             this._panel.webview.postMessage({ command: 'searchResults', results, type: this._type, isInstalledList: true });
         } catch (error) {
-            // Ignore if fails on init
+
         } finally {
             this._panel.webview.postMessage({ command: 'loading', state: false });
         }
@@ -120,7 +119,7 @@ export class PackageManagerWebview {
             this._panel.webview.postMessage({ command: 'loadingDetails', state: true });
             let itemDetails;
             let versions: string[] = [];
-            
+
             if (this._type === 'library') {
                 itemDetails = await this._cliManager.getLibraryDetails(name);
                 if (itemDetails && itemDetails.releases) {

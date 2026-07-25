@@ -4,6 +4,8 @@ import { ArduinoCliManager } from './ArduinoCliManager';
 import { ControlPanelProvider } from './ControlPanelProvider';
 import { IntelliSenseManager } from './IntelliSenseManager';
 import { PackageManagerWebview } from './PackageManagerWebview';
+import { ExampleBrowser } from './ExampleBrowser';
+import { UpdateChecker } from './UpdateChecker';
 import { SerialConnectionManager } from './SerialConnectionManager';
 import { SerialMonitorProvider } from './SerialMonitorProvider';
 import { SerialPlotterProvider } from './SerialPlotterProvider';
@@ -20,18 +22,17 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(outputChannel);
     outputChannel.appendLine('VS Arduino extension activated.');
 
-    // The Cortex-Debug core ships inside this extension — activate it directly.
     activateCortexDebugCore(context, outputChannel);
 
-    // Warn if official cortex-debug is also installed (conflict risk)
     const officialCortexDebug = vscode.extensions.getExtension('marus25.cortex-debug');
     if (officialCortexDebug) {
         vscode.window.showWarningMessage('You have the official Cortex-Debug extension (marus25) installed, which may conflict with the built-in version of VS Arduino. Please disable or uninstall it for the best experience.');
     }
 
     const cliManager = new ArduinoCliManager(context, outputChannel);
+    const updateChecker = new UpdateChecker(cliManager, outputChannel);
     cliManager.initialize().then(async () => {
-        // Auto-detect after initialization
+
         const detected = await cliManager.autoDetectBoardAndPort();
         if (detected) {
             const config = vscode.workspace.getConfiguration('vs-arduino');
@@ -40,6 +41,10 @@ export function activate(context: vscode.ExtensionContext) {
             await config.update('boardName', detected.boardName, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage(`Auto-detected ${detected.boardName} on ${detected.port}`);
         }
+
+        updateChecker.checkAndNotify().catch(updateErr => {
+            outputChannel.appendLine(`Update check failed: ${updateErr instanceof Error ? updateErr.message : String(updateErr)}`);
+        });
     }).catch(err => {
         const errorMsg = err instanceof Error ? err.message : String(err);
         outputChannel.appendLine(`Initialization error: ${errorMsg}`);
@@ -52,15 +57,13 @@ export function activate(context: vscode.ExtensionContext) {
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('arduino');
     context.subscriptions.push(diagnosticCollection);
 
-    // 1. Initialize ControlPanel Webview
     controlPanelProvider = new ControlPanelProvider(context.extensionUri);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(ControlPanelProvider.viewType, controlPanelProvider)
     );
 
-    // Initialize Phase 4 Managers
     const serialConnectionManager = new SerialConnectionManager(cliManager);
-    
+
     const serialMonitorProvider = new SerialMonitorProvider(context.extensionUri, serialConnectionManager);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(SerialMonitorProvider.viewType, serialMonitorProvider)
@@ -71,8 +74,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.registerWebviewViewProvider(SerialPlotterProvider.viewType, serialPlotterProvider)
     );
 
-    // 2. Initialize StatusBar Items
-    // Port on the left (higher priority), Board on the right (lower priority)
     statusBarPort = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     statusBarPort.command = 'vs-arduino.selectPort';
     context.subscriptions.push(statusBarPort);
@@ -83,15 +84,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     updateStatusBar();
 
-    // Register Debug Configuration Provider
     context.subscriptions.push(
         vscode.debug.registerDebugConfigurationProvider(
-            'arduino', 
+            'arduino',
             new ArduinoDebugConfigurationProvider(cliManager, outputChannel)
         )
     );
 
-    // Listen for config changes to update UI
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
         if (e.affectsConfiguration('vs-arduino.board') || e.affectsConfiguration('vs-arduino.port') || e.affectsConfiguration('vs-arduino.boardName') || e.affectsConfiguration('vs-arduino.programmerName')) {
             updateStatusBar();
@@ -102,13 +101,12 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
-    // 3. Register Commands
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.selectBoard', async () => {
         try {
             const boards = await cliManager.getBoardListAll();
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const currentBoard = config.get<string>('board');
-            
+
             const items: vscode.QuickPickItem[] = boards.map(b => {
                 const isSelected = b.fqbn === currentBoard;
                 const version = b.platform?.release?.version;
@@ -141,7 +139,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const currentPort = config.get<string>('port');
-            
+
             const items: vscode.QuickPickItem[] = ports.map(p => {
                 const isSelected = p.port.address === currentPort;
                 return {
@@ -156,7 +154,7 @@ export function activate(context: vscode.ExtensionContext) {
             const selected: any = await vscode.window.showQuickPick(items, { placeHolder: 'Select Port' });
             if (selected) {
                 await config.update('port', selected._address, vscode.ConfigurationTarget.Global);
-                
+
                 if (selected._matching && selected._matching.length > 0) {
                     await config.update('board', selected._matching[0].fqbn, vscode.ConfigurationTarget.Global);
                     await config.update('boardName', selected._matching[0].name, vscode.ConfigurationTarget.Global);
@@ -164,7 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
                     await config.update('board', '', vscode.ConfigurationTarget.Global);
                     await config.update('boardName', '', vscode.ConfigurationTarget.Global);
                 }
-                
+
                 vscode.window.showInformationMessage(`Port set to ${selected._address}`);
             }
         } catch (error) {
@@ -221,6 +219,17 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.openBoardManager', () => {
         PackageManagerWebview.createOrShow(context.extensionUri, cliManager, 'core');
+    }));
+
+    const exampleBrowser = new ExampleBrowser(cliManager);
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.browseExamples', async (menuContext?: any) => {
+        const itemName = menuContext?.vsArduinoItemName;
+        const managerType = menuContext?.vsArduinoManagerType;
+        if (!itemName || (managerType !== 'library' && managerType !== 'core')) {
+            vscode.window.showInformationMessage('Right-click an installed library or board package to browse its examples.');
+            return;
+        }
+        await exampleBrowser.browse(itemName, managerType);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.openSerialMonitor', () => {
@@ -297,7 +306,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                 const selected: any = await vscode.window.showQuickPick(items, { placeHolder: 'Select Programmer for Debugging' });
                 if (!selected) {
-                    return; // User cancelled
+                    return;
                 }
                 await config.update('programmer', selected._id, vscode.ConfigurationTarget.Global);
                 await config.update('programmerName', selected._name, vscode.ConfigurationTarget.Global);
@@ -344,7 +353,7 @@ export function activate(context: vscode.ExtensionContext) {
         const config = vscode.workspace.getConfiguration('vs-arduino');
         const board = config.get<string>('board');
         const port = config.get<string>('port');
-        
+
         if (!board || board === 'Select Board' || !port || port === 'Select Port') {
             vscode.window.showErrorMessage('Please select both a board and a port first.');
             return;
@@ -363,12 +372,12 @@ export function activate(context: vscode.ExtensionContext) {
             cancellable: false
         }, async (progress) => {
             try {
-                // Phase 4: Handle COM Port Conflict
+
                 const wasActive = serialConnectionManager.isActive();
-                
+
                 if (wasActive) {
                     serialConnectionManager.stop();
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for OS to release port
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
 
                 outputChannel.show(true);
@@ -376,7 +385,6 @@ export function activate(context: vscode.ExtensionContext) {
                 await cliManager.upload(board, port, sketchPath);
                 vscode.window.showInformationMessage('Upload succeeded!');
 
-                // Restore
                 if (wasActive) {
                     await serialConnectionManager.start(port, board);
                 }
@@ -387,7 +395,6 @@ export function activate(context: vscode.ExtensionContext) {
         });
     }));
 
-    // Context menu variants
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.contextCompile', async (uri: vscode.Uri) => {
         const config = vscode.workspace.getConfiguration('vs-arduino');
         const board = config.get<string>('board');
@@ -423,7 +430,7 @@ export function activate(context: vscode.ExtensionContext) {
         const config = vscode.workspace.getConfiguration('vs-arduino');
         const board = config.get<string>('board');
         const port = config.get<string>('port');
-        
+
         if (!board || board === 'Select Board' || !port || port === 'Select Port') {
             vscode.window.showErrorMessage('Please select both a board and a port first.');
             return;
@@ -438,7 +445,7 @@ export function activate(context: vscode.ExtensionContext) {
         }, async (progress) => {
             try {
                 const wasActive = serialConnectionManager.isActive();
-                
+
                 if (wasActive) {
                     serialConnectionManager.stop();
                     await new Promise(resolve => setTimeout(resolve, 1000));

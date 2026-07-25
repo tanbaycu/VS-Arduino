@@ -60,6 +60,9 @@
 ### 开发板与库管理器
 - 通过现代化界面搜索、安装、更新、降级和卸载平台与库。
 - 支持按版本选择,精确控制依赖。
+- 右键点击已安装的条目并选择 **Examples**,即可在多级列表中浏览随附的示例程序。
+- 打开示例时会先将其复制到草图本,然后询问在当前窗口还是新窗口中打开。
+- 可更新的开发板与库会合并为一条通知,并提供一键更新。
 
 ### 自动 IntelliSense
 - 每当 `#include` 集合发生变化时,C/C++ 配置会静默生成并刷新,代码补全始终与所选开发板保持一致。
@@ -110,6 +113,10 @@
 | `vs-arduino.sketchbookPath` | Arduino 草图本目录路径,用于查找自定义库 | `""` |
 | `vs-arduino.arduinoDataDir` | 用于库和草图的自定义 Arduino 用户目录 | `""` |
 | `vs-arduino.baudRate` | 串口监视器和绘图器的默认波特率 | `"115200"` |
+| `vs-arduino.exampleOpenTarget` | 打开示例程序的位置:`ask`、`newWindow` 或 `currentWindow` | `"ask"` |
+| `vs-arduino.exampleOpenAskToSetDefault` | 是否询问将所选窗口设为默认 | `true` |
+| `vs-arduino.checkForUpdates` | 启动时检查已安装开发板与库的更新 | `true` |
+| `vs-arduino.ignoredUpdates` | 不接收更新通知的开发板与库 | `[]` |
 
 高级调试行为(工具链路径、GDB 服务器、寄存器显示格式、RTOS 面板)可在 **Cortex-Debug** 设置分区中调整。
 

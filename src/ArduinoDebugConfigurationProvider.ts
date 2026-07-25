@@ -6,7 +6,7 @@ export class ArduinoDebugConfigurationProvider implements vscode.DebugConfigurat
     constructor(private cliManager: ArduinoCliManager, private outputChannel: vscode.OutputChannel) {}
 
     async resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): Promise<vscode.DebugConfiguration | undefined> {
-        // We need a workspace folder
+
         if (!folder) {
             vscode.window.showErrorMessage('Please open a folder containing your Arduino sketch to debug.');
             return undefined;
@@ -16,20 +16,19 @@ export class ArduinoDebugConfigurationProvider implements vscode.DebugConfigurat
         const board = workspaceConfig.get<string>('board');
         const programmer = workspaceConfig.get<string>('programmer');
         const port = workspaceConfig.get<string>('port');
-        
+
         if (!board || board === 'Select Board') {
             vscode.window.showErrorMessage('Please select an Arduino Board before debugging.');
             return undefined;
         }
 
-        // Sanitize path for Windows to avoid 'Invalid escape sequence' in cppdbg
         const sketchPath = folder.uri.fsPath.replace(/\\/g, '/');
         const buildPath = path.join(folder.uri.fsPath, 'build');
 
         try {
             this.outputChannel.appendLine(`\n--- Fetching debug info for ${board} ---`);
             const debugInfo = await this.cliManager.getDebugInfo(board, sketchPath, programmer, port, buildPath);
-            
+
             if (!debugInfo || !debugInfo.executable) {
                 vscode.window.showErrorMessage('Board does not support debugging, or failed to get debug info.');
                 return undefined;
@@ -46,9 +45,7 @@ export class ArduinoDebugConfigurationProvider implements vscode.DebugConfigurat
 
             const postAttachCommands = (cortexDebugConfig.postAttachCommands || [])
                 .filter((cmd: string) => cmd !== 'c' && cmd !== 'continue');
-            // runToEntryPoint only applies to launch requests. For attach requests,
-            // run past the core static initializers and stop in the user's sketch,
-            // so VS Code never auto-opens core files like IPAddress.cpp or main.cpp.
+
             if (requestType === 'attach') {
                 postAttachCommands.push('tbreak setup', 'continue');
             }
@@ -72,11 +69,10 @@ export class ArduinoDebugConfigurationProvider implements vscode.DebugConfigurat
                 showDevDebugOutput: 'raw'
             };
 
-            // Start debugging with the new configuration
             setTimeout(() => {
                 vscode.debug.startDebugging(folder, debugConfig);
             }, 100);
-            
+
             return undefined;
 
         } catch (error) {

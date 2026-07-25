@@ -5,7 +5,7 @@ import { SerialConnectionManager } from './SerialConnectionManager';
 
 export class SerialPlotterProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'vs-arduino-serial-plotter';
-    
+
     private _view?: vscode.WebviewView;
     private _panel?: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
@@ -14,7 +14,7 @@ export class SerialPlotterProvider implements vscode.WebviewViewProvider {
         private readonly _extensionUri: vscode.Uri,
         private readonly _connectionManager: SerialConnectionManager
     ) {
-        // Subscribe to plotter manager events
+
         this._connectionManager.onPlotData(data => {
             this.postMessage({ type: 'data', values: data.values, labels: data.labels });
         });
@@ -102,7 +102,7 @@ export class SerialPlotterProvider implements vscode.WebviewViewProvider {
                     this.exportCsv(data.data);
                     break;
                 case 'ready':
-                    // Webview is ready, send current state
+
                     this.postMessage({ type: 'state', isActive: this._connectionManager.isActive() });
                     const config = vscode.workspace.getConfiguration('vs-arduino');
                     this.postMessage({ type: 'baudRate', value: config.get<string>('baudRate') || '115200' });
@@ -170,7 +170,7 @@ export class SerialPlotterProvider implements vscode.WebviewViewProvider {
 
     public dispose() {
         if (this._view) {
-            // View can't really be disposed by us
+
         }
         if (this._panel) {
             this._panel.dispose();

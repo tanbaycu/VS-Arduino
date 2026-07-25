@@ -2,7 +2,7 @@
   "name": "vs-arduino",
   "displayName": "VS Arduino",
   "description": "Program Arduino directly in VS Code using arduino-cli",
-  "version": "2026.7.1802",
+  "version": "2026.7.2301",
   "publisher": "HiTECH-Corporation",
   "license": "MIT",
   "author": {
@@ -149,6 +149,10 @@
         "title": "VS Arduino: Open Serial Plotter"
       },
       {
+        "command": "vs-arduino.browseExamples",
+        "title": "Examples"
+      },
+      {
         "command": "vs-arduino.contextCompile",
         "title": "VS Arduino: Compile/Verify Sketch"
       },
@@ -293,7 +297,18 @@
           "group": "vs-arduino@2"
         }
       ],
+      "webview/context": [
+        {
+          "command": "vs-arduino.browseExamples",
+          "when": "webviewId =~ /^arduinoPackageManager-/ && webviewSection == 'installedItem'",
+          "group": "navigation@1"
+        }
+      ],
       "commandPalette": [
+        {
+          "command": "vs-arduino.browseExamples",
+          "when": "false"
+        },
         {
           "command": "cortex-debug.peripherals.updateNode",
           "when": "false"
@@ -515,6 +530,39 @@
             "type": "string",
             "default": "115200",
             "description": "Default baud rate for Serial Monitor and Plotter."
+          },
+          "vs-arduino.exampleOpenTarget": {
+            "type": "string",
+            "enum": [
+              "ask",
+              "newWindow",
+              "currentWindow"
+            ],
+            "enumDescriptions": [
+              "Ask every time an example sketch is opened.",
+              "Always open example sketches in a new window.",
+              "Always open example sketches in the current window."
+            ],
+            "default": "ask",
+            "description": "Where to open example sketches picked from the Board or Library Manager."
+          },
+          "vs-arduino.exampleOpenAskToSetDefault": {
+            "type": "boolean",
+            "default": true,
+            "description": "After choosing a window for an example sketch, offer to remember it as the default. Disabled by choosing \"Don't Ask Again\"."
+          },
+          "vs-arduino.checkForUpdates": {
+            "type": "boolean",
+            "default": true,
+            "description": "Check for updates to installed board packages and libraries on startup and offer to install them."
+          },
+          "vs-arduino.ignoredUpdates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": [],
+            "description": "Board packages and libraries excluded from update notifications, identified by name."
           }
         }
       },

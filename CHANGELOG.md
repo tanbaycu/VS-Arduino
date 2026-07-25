@@ -4,6 +4,25 @@ All notable changes to the **VS Arduino** extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026.7.2301]
+
+### Added
+
+- **Example sketch browser** in the Board Manager and Library Manager. Right-click any entry under *Installed* and choose **Examples** from Visual Studio Code's native context menu to browse the package's bundled sketches. Nested example folders are navigated through a searchable picker with breadcrumbs and a **Back** entry.
+- Selecting an example copies the sketch folder into your sketchbook before opening it, so the original files shipped with the library or board package are never modified. Duplicate names are resolved with a numeric suffix and the `.ino` file is renamed to match its folder.
+- A notification asks whether to open the example in **This Window** or a **New Window**. After choosing, a follow-up dialog offers **Set as Default**, **No, Thanks**, or **Don't Ask Again**.
+- **Update notifications** for installed board packages and libraries. A single outdated item is named with its version change; two or more are reported as counts only. Board and library updates are combined into one notification with **Update** and **No, Thanks** actions, plus **Don't Notify for This** for a single item or **Stop Update Notifications** when several are pending.
+- New settings: `vs-arduino.exampleOpenTarget`, `vs-arduino.exampleOpenAskToSetDefault`, `vs-arduino.checkForUpdates`, and `vs-arduino.ignoredUpdates`.
+
+### Changed
+
+- The Board Manager and Library Manager search indicator is now a rounded-cap sliding bar in the Arduino teal used by the Verify and Upload actions.
+- Source files across the extension and the UI sources are now comment-free, relying on self-documenting names instead.
+
+### Fixed
+
+- **Automatic `arduino-cli` download now works on every supported platform.** The previous implementation requested installer scripts from a branch path that returns HTTP 404 and never unpacked the archive. Releases are now resolved through the GitHub Releases API (falling back to `1.5.1` when the API is unreachable), the correct archive is selected for the detected platform and architecture, redirects no longer leave a locked partial file, and the archive is extracted natively with `Expand-Archive` on Windows or `tar` elsewhere. The binary is marked executable on Unix systems and its path is written to `vs-arduino.arduinoCliPath`. Thanks to the contributor who reported and fixed this.
+
 ## [2026.7.1802]
 
 ### Added

@@ -7,16 +7,13 @@ export class SerialConnectionManager {
     private currentPort: string | undefined;
     private currentBoard: string | undefined;
     private currentBaudRate: string = '115200';
-    
-    // Event emitted when raw text data is received
+
     private _onData = new vscode.EventEmitter<string>();
     public readonly onData: vscode.Event<string> = this._onData.event;
 
-    // Event emitted when numeric data is received (for Plotter)
     private _onPlotData = new vscode.EventEmitter<{values: number[], labels: string[]}>();
     public readonly onPlotData: vscode.Event<{values: number[], labels: string[]}> = this._onPlotData.event;
 
-    // Event emitted when connection state changes
     private _onStateChange = new vscode.EventEmitter<boolean>();
     public readonly onStateChange: vscode.Event<boolean> = this._onStateChange.event;
 
@@ -28,12 +25,12 @@ export class SerialConnectionManager {
         }
 
         const config = vscode.workspace.getConfiguration('vs-arduino');
-        
+
         this.currentPort = port || config.get<string>('port');
         this.currentBoard = boardFqbn || config.get<string>('board');
         this.currentBaudRate = config.get<string>('baudRate') || '115200';
 
-        if (!this.currentPort || this.currentPort === 'Select Port' || 
+        if (!this.currentPort || this.currentPort === 'Select Port' ||
             !this.currentBoard || this.currentBoard === 'Select Board') {
             vscode.window.showErrorMessage('Please select a port and board first.');
             return;
@@ -42,8 +39,7 @@ export class SerialConnectionManager {
         const cliPath = config.get<string>('arduinoCliPath') || 'arduino-cli';
 
         const configArg = await this.cliManager.getConfigFileArg();
-        // --quiet removes "Port open" messages.
-        // --raw sets unbuffered output mode so data streams immediately.
+
         const args = ['monitor', ...configArg, '-p', this.currentPort, '-b', this.currentBoard, '--config', `baudrate=${this.currentBaudRate}`, '--quiet', '--raw'];
 
         this.process = spawn(`"${cliPath}"`, args, { shell: true });
@@ -52,10 +48,9 @@ export class SerialConnectionManager {
 
         this.process.stdout?.on('data', (data: Buffer) => {
             const str = data.toString();
-            // Emit raw data to Serial Monitor
+
             this._onData.fire(str);
-            
-            // Parse data for Plotter
+
             buffer += str;
             let newlineIndex;
             while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
@@ -97,9 +92,9 @@ export class SerialConnectionManager {
         this.currentBaudRate = newBaud;
         const config = vscode.workspace.getConfiguration('vs-arduino');
         await config.update('baudRate', newBaud, vscode.ConfigurationTarget.Global);
-        
+
         if (this.process && this.currentPort && this.currentBoard) {
-            this.start(this.currentPort, this.currentBoard); // Restarts the process
+            this.start(this.currentPort, this.currentBoard);
         }
     }
 
@@ -108,7 +103,7 @@ export class SerialConnectionManager {
         const parts = line.split(/[\s,]+/).filter(p => p !== '');
         const values: number[] = [];
         const labels: string[] = [];
-        
+
         for (const part of parts) {
             let valStr = part;
             let label = "";

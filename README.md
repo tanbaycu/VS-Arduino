@@ -60,6 +60,9 @@
 ### Board & Library Managers
 - Search, install, update, downgrade, and uninstall platforms and libraries through a modern UI.
 - Per-version selection for precise dependency control.
+- Right-click any installed entry and choose **Examples** to browse the bundled example sketches in a nested picker.
+- Opening an example copies it into your sketchbook first, then asks whether to use this window or a new one.
+- Outdated board packages and libraries are reported in a single notification with a one-click update action.
 
 ### Automatic IntelliSense
 - C/C++ configurations are generated and refreshed silently whenever your `#include` set changes, so code completion always matches the selected board.
@@ -110,6 +113,10 @@ Install from either store:
 | `vs-arduino.sketchbookPath` | Path to your Arduino sketchbook directory, used to locate custom libraries | `""` |
 | `vs-arduino.arduinoDataDir` | Custom Arduino user directory for libraries and sketches | `""` |
 | `vs-arduino.baudRate` | Default baud rate for Serial Monitor and Plotter | `"115200"` |
+| `vs-arduino.exampleOpenTarget` | Where to open example sketches: `ask`, `newWindow`, or `currentWindow` | `"ask"` |
+| `vs-arduino.exampleOpenAskToSetDefault` | Offer to remember the chosen window as the default | `true` |
+| `vs-arduino.checkForUpdates` | Check installed board packages and libraries for updates on startup | `true` |
+| `vs-arduino.ignoredUpdates` | Board packages and libraries excluded from update notifications | `[]` |
 
 Advanced debugging behavior (toolchain paths, GDB server binaries, register formatting, RTOS panel) can be tuned under the **Cortex-Debug** settings section.
 
@@ -161,6 +168,10 @@ Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md)
 Found a bug or have an idea? [Open an issue](https://github.com/HiTECH-Corporation/VS-Arduino/issues) using the **Bug Report** or **Feature Request** template. Please include your extension version, VS Code version, OS, and board when reporting bugs.
 
 ## License & Credits
+
+<a href="https://github.com/HiTECH-Corporation/VS-Arduino/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=HiTECH-Corporation/VS-Arduino" alt="Contributors" />
+</a>
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for details.
 Third-party attributions are listed in [ThirdPartyNotices.txt](ThirdPartyNotices.txt).

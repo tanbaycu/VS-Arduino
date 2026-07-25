@@ -21,3 +21,5 @@ out/test/**
 !src/debugger/cortex-debug-core/**
 
 # Shipped: out/**, media/**, package.json, README.md, CHANGELOG.md, LICENSE, ThirdPartyNotices.txt
+
+.backup/**

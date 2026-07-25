@@ -1,6 +1,3 @@
-// Based on vscode-arduino-intellisense by svnty (MIT License). 
-// Modified and integrated for VS Arduino.
-
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
 import * as path from 'path';
@@ -39,7 +36,7 @@ export class IntelliSenseManager {
     }
 
     public initialize(context: vscode.ExtensionContext) {
-        // Watch for file creation from within VS Code
+
         context.subscriptions.push(vscode.workspace.onDidCreateFiles(event => {
             event.files.forEach(uri => {
                 if (uri.fsPath.endsWith('.ino')) {
@@ -48,12 +45,10 @@ export class IntelliSenseManager {
             });
         }));
 
-        // Watch for .ino files created outside VS Code (file explorer, terminal, git, ...)
         const inoWatcher = vscode.workspace.createFileSystemWatcher('**/*.ino', false, true, true);
         context.subscriptions.push(inoWatcher);
         inoWatcher.onDidCreate(uri => this.handleNewSketch(uri.fsPath));
 
-        // Cover sketches already open when the extension activates
         vscode.workspace.textDocuments
             .filter(doc => doc.fileName.endsWith('.ino'))
             .forEach(doc => {
@@ -61,7 +56,6 @@ export class IntelliSenseManager {
                 this.checkIncludesAndRegenerate(doc.fileName);
             });
 
-        // Watch for file save
         context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
             if (!doc.fileName.endsWith('.ino')) return;
             this._docs[doc.fileName] = doc.getText();
@@ -69,7 +63,6 @@ export class IntelliSenseManager {
             this.checkIncludesAndRegenerate(doc.fileName);
         }));
 
-        // Watch for file open
         context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(doc => {
             if (!doc.fileName.endsWith('.ino')) return;
             this._docs[doc.fileName] = doc.getText();
@@ -77,11 +70,10 @@ export class IntelliSenseManager {
             this.checkIncludesAndRegenerate(doc.fileName);
         }));
 
-        // Watch for text changes
         context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
             const doc = event.document;
             if (!doc.fileName.endsWith('.ino')) return;
-            
+
             this._docs[doc.fileName] = doc.getText();
 
             if (!this.debouncedRegenerate[doc.fileName]) {
@@ -109,21 +101,19 @@ export class IntelliSenseManager {
     }
 
     private async handleNewSketch(sketchPath: string) {
-        // Ignore the temporary sketch copies this manager writes under .vscode/
-        // while extracting board properties.
+
         if (sketchPath.split(/[\\/]/).includes('.vscode')) return;
 
         this.channel.appendLine(`[IntelliSense] Detected new sketch ${sketchPath}, creating IntelliSense configuration`);
-        // Immediately create a default config — even for an empty file — so the
-        // C/C++ extension never reports missing includePath/identifiers.
+
         await this.ensureDefaultConfig(sketchPath);
-        // Then trigger the full board-aware regeneration in the background.
+
         this.checkIncludesAndRegenerate(sketchPath);
     }
 
     public updateAllSketchesInWorkspace() {
-        // Triggered when board changes
-        this.compilationCache = {}; // Clear cache on board change
+
+        this.compilationCache = {};
         vscode.workspace.textDocuments
             .filter(doc => doc.fileName.endsWith('.ino'))
             .forEach(doc => this.regenerateIntellisense(doc.fileName));
@@ -169,13 +159,10 @@ export class IntelliSenseManager {
     }
 
     private async checkIncludesAndRegenerate(sketchPath: string) {
-        // Capture whether a config already existed BEFORE creating the fallback,
-        // so a freshly created default config still triggers full regeneration.
+
         const configPath = path.join(path.dirname(sketchPath), '.vscode', 'c_cpp_properties.json');
         const configExists = fs.existsSync(configPath);
 
-        // Always guarantee a config exists first so IntelliSense errors never
-        // appear while the full compilation-based generation is in flight.
         await this.ensureDefaultConfig(sketchPath);
 
         let text = this._docs[sketchPath];
@@ -190,7 +177,7 @@ export class IntelliSenseManager {
 
         const includeRegex = /^\s*#include\s+[<"]([^>"]+)[>"]/;
         const lines = text.split(/\r?\n/);
-        
+
         const activeIncludeStatements: string[] = [];
         for (const line of lines) {
             if (line.includes('include')) {
@@ -258,7 +245,6 @@ export class IntelliSenseManager {
                 };
             }
 
-            // Find Arduino.h path for forcedInclude
             const arduinoHPath = this.findArduinoH(props.includePaths);
 
             const cCppConfig = {
@@ -384,7 +370,7 @@ export class IntelliSenseManager {
                         l.includes('riscv32-esp-elf-g++')) &&
                     l.includes('-I')
                 );
-                
+
                 if (gppLines.length > 0) {
                     let iprefix = '';
                     let firstGpp: string | undefined = undefined;
@@ -392,11 +378,11 @@ export class IntelliSenseManager {
 
                     for (const line of gppLines) {
                         const parts = line.split(' ');
-                        
+
                         if (!firstGpp) {
                             firstGpp = parts.find(p => p.includes('g++'));
                         }
-                        
+
                         const lineMmcu = parts.find(p => p.startsWith('-mmcu='))?.split('=')[1];
                         if (lineMmcu) mmcu = lineMmcu;
 
@@ -434,12 +420,12 @@ export class IntelliSenseManager {
                                             return includePath;
                                         })
                                         .filter((p: string) => p.length > 0);
-                                    
+
                                     additionalIncludes.forEach(inc => {
                                         if (!includePaths.includes(inc)) includePaths.push(inc);
                                     });
                                 } catch (err) {
-                                    // Ignore read errors for includes.txt
+
                                 }
                             }
                         });
@@ -464,7 +450,6 @@ export class IntelliSenseManager {
                             const includeDir = path.join(path.dirname(compilerPath), '..', 'avr', 'include');
                             includePaths.push(includeDir);
                         }
-
 
                         const stdLibProc = spawn(compilerPath, ['-dM', '-E', '-x', 'c++', '-']);
                         stdLibProc.stdin.write('#include <stdint.h>\n#include <stdlib.h>\n#include <string.h>\n#include <stdio.h>\n');
@@ -569,7 +554,7 @@ export class IntelliSenseManager {
 
     private findArduinoH(includePaths: string[]): string | null {
         for (const incPath of includePaths) {
-            // Normalize path separators
+
             const normalizedPath = incPath.replace(/\//g, path.sep);
             const candidate = path.join(normalizedPath, 'Arduino.h');
             if (fs.existsSync(candidate)) {

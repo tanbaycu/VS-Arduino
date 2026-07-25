@@ -5,7 +5,7 @@ import { SerialConnectionManager } from './SerialConnectionManager';
 
 export class SerialMonitorProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'vs-arduino-serial-monitor';
-    
+
     private _view?: vscode.WebviewView;
     private _panel?: vscode.WebviewPanel;
     private _disposables: vscode.Disposable[] = [];
@@ -78,15 +78,15 @@ export class SerialMonitorProvider implements vscode.WebviewViewProvider {
                     break;
                 case 'send':
                     let text = data.value;
-                    const newlineConfig = data.newline; // 'none', 'nl', 'cr', 'nlcr'
+                    const newlineConfig = data.newline;
                     if (newlineConfig === 'nl') text += '\n';
                     else if (newlineConfig === 'cr') text += '\r';
                     else if (newlineConfig === 'nlcr') text += '\r\n';
-                    
+
                     this._connectionManager.sendText(text);
                     break;
                 case 'ready':
-                    // Auto-connect when the monitor webview becomes ready
+
                     if (!this._connectionManager.isActive()) {
                         this._connectionManager.start();
                     }
@@ -127,7 +127,7 @@ export class SerialMonitorProvider implements vscode.WebviewViewProvider {
 
     public dispose() {
         if (this._view) {
-            // View can't really be disposed by us
+
         }
         if (this._panel) {
             this._panel.dispose();
