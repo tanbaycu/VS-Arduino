@@ -12,7 +12,7 @@ tsconfig.json
 package-lock.json
 .gitignore
 .vscodeignore
-.gitlab-ci.yml
+.circleci/**
 *.vsix
 out/**/*.map
 out/test/**

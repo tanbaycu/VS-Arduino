@@ -1,0 +1,105 @@
+# CircleCI configuration for VS Arduino
+#
+# Pipeline behavior:
+#   - Every commit on any branch  -> "verify" job only (compile check, no publishing)
+#   - Git tag matching v*         -> "release" job: package + publish to
+#     VS Code Marketplace and Open VSX
+#
+# Release signal: push an annotated tag, e.g.
+#   git tag v2026.7.2301 && git push origin v2026.7.2301
+#
+# Required environment variables (Project Settings > Environment Variables):
+#   VSCE_PAT              - Azure DevOps Personal Access Token (Marketplace: Manage scope)
+#   OVSX_PAT              - Open VSX access token
+#   MARKETPLACE_PUBLISHER - HiTECH-Corporation
+#   OPENVSX_PUBLISHER     - HiTECH-Corporation
+
+version: 2.1
+
+executors:
+  node:
+    docker:
+      - image: cimg/node:20.19
+    resource_class: medium
+
+jobs:
+  verify:
+    executor: node
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-deps-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: npm-deps-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Compile
+          command: npm run compile
+      - run:
+          name: Validate manifest
+          command: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('manifest OK')"
+
+  release:
+    executor: node
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-deps-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - run:
+          name: Compile
+          command: npm run compile
+      - run:
+          name: Verify tag matches package.json version
+          command: |
+            PKG_VERSION=$(node -p "require('./package.json').version")
+            TAG_VERSION="${CIRCLE_TAG#v}"
+            if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+              echo "Tag ($TAG_VERSION) does not match package.json version ($PKG_VERSION)" >&2
+              exit 1
+            fi
+      - run:
+          name: Package and publish to VS Code Marketplace
+          command: |
+            node scripts/set-publisher.js "$MARKETPLACE_PUBLISHER"
+            npx --yes @vscode/vsce package -o "vs-arduino-marketplace.vsix"
+            SIZE=$(stat -c%s "vs-arduino-marketplace.vsix")
+            if [ "$SIZE" -gt 20000000 ]; then
+              echo "vs-arduino-marketplace.vsix is $((SIZE / 1000000)) MB - packaging leak detected, refusing to publish" >&2
+              exit 1
+            fi
+            npx --yes @vscode/vsce publish --packagePath "vs-arduino-marketplace.vsix" -p "$VSCE_PAT" --skip-duplicate
+      - run:
+          name: Package and publish to Open VSX
+          command: |
+            node scripts/set-publisher.js "$OPENVSX_PUBLISHER"
+            npx --yes @vscode/vsce package -o "vs-arduino-openvsx.vsix"
+            npx --yes ovsx publish "vs-arduino-openvsx.vsix" -p "$OVSX_PAT" --skip-duplicate
+      - store_artifacts:
+          path: vs-arduino-marketplace.vsix
+      - store_artifacts:
+          path: vs-arduino-openvsx.vsix
+
+workflows:
+  verify:
+    jobs:
+      - verify:
+          filters:
+            tags:
+              ignore: /.*/
+  release:
+    jobs:
+      - release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
