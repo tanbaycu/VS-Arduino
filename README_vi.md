@@ -5,6 +5,7 @@
 <h1 align="center">VS Arduino</h1>
 
 <p align="center">
+  <a href="https://dl.circleci.com/status-badge/redirect/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main"><img src="https://dl.circleci.com/status-badge/img/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main.svg?style=svg" alt="CircleCI" /></a>
   <img src="https://img.shields.io/badge/VS%20Code-%5E1.80.0-blue" alt="VS Code" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Platform-Arduino-00979D?logo=arduino" alt="Arduino" />
@@ -19,10 +20,10 @@
 ---
 
 <p align="center">
-  <a href="README.md"><b>English</b></a> |
+  <a href="https://github.com/HiTECH-Corporation/VS-Arduino/blob/main/README.md"><b>English</b></a> |
   <b>Tiếng Việt</b> |
-  <a href="README_ja.md"><b>日本語</b></a> |
-  <a href="README_zh.md"><b>中文</b></a>
+  <a href="https://github.com/HiTECH-Corporation/VS-Arduino/blob/main/README_ja.md"><b>日本語</b></a> |
+  <a href="https://github.com/HiTECH-Corporation/VS-Arduino/blob/main/README_zh.md"><b>中文</b></a>
 </p>
 
 <p align="center">
@@ -168,6 +169,10 @@ Mọi đóng góp đều được chào đón! Vui lòng đọc [Hướng dẫn 
 Phát hiện lỗi hoặc có ý tưởng? [Mở issue](https://github.com/HiTECH-Corporation/VS-Arduino/issues) với template **Bug Report** hoặc **Feature Request**. Khi báo lỗi, vui lòng kèm phiên bản extension, phiên bản VS Code, hệ điều hành và board đang dùng.
 
 ## Giấy phép & Ghi công
+
+<a href="https://github.com/HiTECH-Corporation/VS-Arduino/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=HiTECH-Corporation/VS-Arduino" alt="Contributors" />
+</a>
 
 Phát hành theo Giấy phép MIT. Xem chi tiết tại [LICENSE](LICENSE).
 Ghi công bên thứ ba được liệt kê trong [ThirdPartyNotices.txt](ThirdPartyNotices.txt).

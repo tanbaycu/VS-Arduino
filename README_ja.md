@@ -5,6 +5,7 @@
 <h1 align="center">VS Arduino</h1>
 
 <p align="center">
+  <a href="https://dl.circleci.com/status-badge/redirect/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main"><img src="https://dl.circleci.com/status-badge/img/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main.svg?style=svg" alt="CircleCI" /></a>
   <img src="https://img.shields.io/badge/VS%20Code-%5E1.80.0-blue" alt="VS Code" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Platform-Arduino-00979D?logo=arduino" alt="Arduino" />
@@ -19,10 +20,10 @@
 ---
 
 <p align="center">
-  <a href="README.md"><b>English</b></a> |
-  <a href="README_vi.md"><b>Tiếng Việt</b></a> |
+  <a href="https://github.com/HiTECH-Corporation/VS-Arduino/blob/main/README.md"><b>English</b></a> |
+  <a href="https://github.com/HiTECH-Corporation/VS-Arduino/blob/main/README_vi.md"><b>Tiếng Việt</b></a> |
   <b>日本語</b> |
-  <a href="README_zh.md"><b>中文</b></a>
+  <a href="https://github.com/HiTECH-Corporation/VS-Arduino/blob/main/README_zh.md"><b>中文</b></a>
 </p>
 
 <p align="center">
@@ -168,6 +169,10 @@ USB ケーブルがデータ通信対応(充電専用ではない)であるこ�
 バグを見つけた、またはアイデアがある場合は、**Bug Report** または **Feature Request** テンプレートを使って [issue を作成](https://github.com/HiTECH-Corporation/VS-Arduino/issues)してください。バグ報告の際は、拡張機能のバージョン、VS Code のバージョン、OS、使用ボードを記載してください。
 
 ## ライセンス & クレジット
+
+<a href="https://github.com/HiTECH-Corporation/VS-Arduino/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=HiTECH-Corporation/VS-Arduino" alt="Contributors" />
+</a>
 
 MIT ライセンスの下で配布されています。詳細は [LICENSE](LICENSE) をご覧ください。
 サードパーティの帰属表示は [ThirdPartyNotices.txt](ThirdPartyNotices.txt) に記載されています。
