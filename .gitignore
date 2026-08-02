@@ -9,3 +9,6 @@ v0_Screens/
 
 # Local-only backups of design sources
 .backup/
+
+# Local reference clone of the archived Microsoft extension
+vscode-arduino/

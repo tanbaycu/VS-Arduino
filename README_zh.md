@@ -5,7 +5,7 @@
 <h1 align="center">VS Arduino</h1>
 
 <p align="center">
-  <a href="https://dl.circleci.com/status-badge/redirect/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main"><img src="https://dl.circleci.com/status-badge/img/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main.svg?style=svg" alt="CircleCI" /></a>
+  <a href="https://dl.circleci.com/status-badge/redirect/circleci/KNJD7KZVRroRafzzdwQswG/RgR4B5B8AM4iSpyUokQL2F/tree/main"><img src="https://img.shields.io/badge/CI-CircleCI-343434?logo=circleci" alt="CircleCI" /></a>
   <img src="https://img.shields.io/badge/VS%20Code-%5E1.80.0-blue" alt="VS Code" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License: MIT" />
   <img src="https://img.shields.io/badge/Platform-Arduino-00979D?logo=arduino" alt="Arduino" />

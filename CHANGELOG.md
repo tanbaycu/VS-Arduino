@@ -4,6 +4,27 @@ All notable changes to the **VS Arduino** extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026.8.2]
+
+### Added
+
+- **Instant IntelliSense for new sketches.** Board properties discovered during analysis are now cached per board in persistent storage, so creating a new `.ino` file immediately produces a complete `c_cpp_properties.json` with the compiler path, include paths, and defines for the selected board — no compilation wait, and no error squiggles while typing in a brand-new sketch that has not been saved yet.
+
+### Changed
+
+- The analysis sketch copy used to resolve local `"..."` headers is now created in the system temp directory instead of inside the sketch's `.vscode` folder, and is always removed after analysis. This stops the recursive `.vscode/<sketch>/.vscode/<sketch>/...` folder nesting that appeared when the copied sketch was opened.
+- Sketch files located inside a `.vscode` folder are ignored by all IntelliSense triggers (open, save, edit, create), and leftover sketch copies from previous versions are cleaned up automatically on the next analysis.
+- The CircleCI badge in the READMEs now uses a Marketplace-compatible shields.io image.
+
+### Fixed
+
+- **IntelliSense configuration now regenerates reliably.** Previously, pasting or writing code into a sketch could leave a stub configuration with an empty compiler path in place forever — even after deleting `.vscode` and reopening the file — because `arduino-cli` served fully cached builds whose verbose output contains no compiler command lines to parse. Every analysis compile now runs with a fresh `--build-path`, guaranteeing parseable output on every run.
+- An incomplete or stub `c_cpp_properties.json` is now detected and regenerated even when the sketch's `#include` lines have not changed — sketches with no `#include` at all (plain `pinMode`/`digitalWrite` code) previously never triggered regeneration.
+- Regeneration requests arriving while an analysis is already running are queued and executed afterwards instead of being dropped.
+- The include cache is committed only after a configuration is successfully written, so a failed analysis no longer blocks future attempts.
+- `arduino-cli` process launch failures are handled instead of leaving the analysis hanging, and partial results are still used when auxiliary probes fail.
+- `#include<Header.h>` without a space after `#include` is now recognized.
+
 ## [2026.7.2301]
 
 ### Added

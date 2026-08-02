@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { spawn } from 'child_process';
 import * as path from 'path';
+import * as os from 'os';
 import * as fsPromises from 'fs/promises';
 import * as fs from 'fs';
 import { ArduinoCliManager } from './ArduinoCliManager';
@@ -29,6 +30,8 @@ export class IntelliSenseManager {
     private _docs: { [file: string]: string } = {};
     private compilationCache: { [file: string]: { activeIncludes: string; fqbn: string; properties: BoardProperties; } } = {};
     private isRegenerating: { [file: string]: boolean } = {};
+    private pendingRegenerate: { [file: string]: boolean } = {};
+    private context: vscode.ExtensionContext | undefined;
 
     constructor(channel: vscode.OutputChannel, cliManager: ArduinoCliManager) {
         this.channel = channel;
@@ -36,6 +39,7 @@ export class IntelliSenseManager {
     }
 
     public initialize(context: vscode.ExtensionContext) {
+        this.context = context;
 
         context.subscriptions.push(vscode.workspace.onDidCreateFiles(event => {
             event.files.forEach(uri => {
@@ -50,21 +54,21 @@ export class IntelliSenseManager {
         inoWatcher.onDidCreate(uri => this.handleNewSketch(uri.fsPath));
 
         vscode.workspace.textDocuments
-            .filter(doc => doc.fileName.endsWith('.ino'))
+            .filter(doc => doc.fileName.endsWith('.ino') && !this.isInsideVscodeDir(doc.fileName))
             .forEach(doc => {
                 this._docs[doc.fileName] = doc.getText();
                 this.checkIncludesAndRegenerate(doc.fileName);
             });
 
         context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
-            if (!doc.fileName.endsWith('.ino')) return;
+            if (!doc.fileName.endsWith('.ino') || this.isInsideVscodeDir(doc.fileName)) return;
             this._docs[doc.fileName] = doc.getText();
             this.channel.appendLine(`[IntelliSense] Saved file ${doc.fileName}, checking if #includes have changed`);
             this.checkIncludesAndRegenerate(doc.fileName);
         }));
 
         context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(doc => {
-            if (!doc.fileName.endsWith('.ino')) return;
+            if (!doc.fileName.endsWith('.ino') || this.isInsideVscodeDir(doc.fileName)) return;
             this._docs[doc.fileName] = doc.getText();
             this.channel.appendLine(`[IntelliSense] Opened file ${doc.fileName}, regenerating IntelliSense`);
             this.checkIncludesAndRegenerate(doc.fileName);
@@ -72,7 +76,7 @@ export class IntelliSenseManager {
 
         context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
             const doc = event.document;
-            if (!doc.fileName.endsWith('.ino')) return;
+            if (!doc.fileName.endsWith('.ino') || this.isInsideVscodeDir(doc.fileName)) return;
 
             this._docs[doc.fileName] = doc.getText();
 
@@ -100,9 +104,25 @@ export class IntelliSenseManager {
         }));
     }
 
+    private isInsideVscodeDir(filePath: string): boolean {
+        return filePath.split(/[\\/]/).includes('.vscode');
+    }
+
+    private async removeLegacySketchCopy(sketchPath: string) {
+        const sketchName = path.basename(sketchPath, '.ino');
+        const legacyDir = path.join(path.dirname(sketchPath), '.vscode', sketchName);
+        try {
+            const legacyIno = path.join(legacyDir, `${sketchName}.ino`);
+            await fsPromises.access(legacyIno);
+            await fsPromises.rm(legacyDir, { recursive: true, force: true });
+            this.channel.appendLine(`[IntelliSense] Removed legacy sketch copy at ${legacyDir}`);
+        } catch {
+        }
+    }
+
     private async handleNewSketch(sketchPath: string) {
 
-        if (sketchPath.split(/[\\/]/).includes('.vscode')) return;
+        if (this.isInsideVscodeDir(sketchPath)) return;
 
         this.channel.appendLine(`[IntelliSense] Detected new sketch ${sketchPath}, creating IntelliSense configuration`);
 
@@ -115,8 +135,11 @@ export class IntelliSenseManager {
 
         this.compilationCache = {};
         vscode.workspace.textDocuments
-            .filter(doc => doc.fileName.endsWith('.ino'))
-            .forEach(doc => this.regenerateIntellisense(doc.fileName));
+            .filter(doc => doc.fileName.endsWith('.ino') && !this.isInsideVscodeDir(doc.fileName))
+            .forEach(doc => {
+                this._docs[doc.fileName] = doc.getText();
+                this.regenerateIntellisense(doc.fileName, this.extractIncludes(doc.getText()));
+            });
     }
 
     private async ensureDefaultConfig(sketchPath: string) {
@@ -125,6 +148,20 @@ export class IntelliSenseManager {
         const configPath = path.join(vscodeDir, 'c_cpp_properties.json');
 
         if (fs.existsSync(configPath)) {
+            if (!this.isConfigComplete(configPath)) {
+                const config = vscode.workspace.getConfiguration('vs-arduino');
+                const FQBN = config.get<string>('board') || 'arduino:avr:uno';
+                const cachedProps = this.getCachedBoardProperties(FQBN);
+                if (cachedProps) {
+                    try {
+                        await fsPromises.writeFile(configPath, JSON.stringify(this.buildConfig(FQBN, cachedProps), null, 4));
+                        this.channel.appendLine(`[IntelliSense] Upgraded incomplete config from cached board properties at ${configPath}`);
+                    } catch (err) {
+                        this.channel.appendLine(`[IntelliSense] Error upgrading incomplete config: ${err}`);
+                    }
+                }
+                return;
+            }
             this.channel.appendLine(`[IntelliSense] Config already exists at ${configPath}, skipping default creation`);
             return;
         }
@@ -134,6 +171,13 @@ export class IntelliSenseManager {
 
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const FQBN = config.get<string>('board') || 'arduino:avr:uno';
+
+            const cachedProps = this.getCachedBoardProperties(FQBN);
+            if (cachedProps) {
+                await fsPromises.writeFile(configPath, JSON.stringify(this.buildConfig(FQBN, cachedProps), null, 4));
+                this.channel.appendLine(`[IntelliSense] Created full config from cached board properties at ${configPath}`);
+                return;
+            }
 
             const defaultConfig = {
                 configurations: [
@@ -158,10 +202,72 @@ export class IntelliSenseManager {
         }
     }
 
+    private fqbnPropsKey(fqbn: string): string {
+        return `intellisense.boardProperties.${fqbn}`;
+    }
+
+    private getCachedBoardProperties(fqbn: string): BoardProperties | undefined {
+        const props = this.context?.globalState.get<BoardProperties>(this.fqbnPropsKey(fqbn));
+        if (props && props.compilerPath && fs.existsSync(props.compilerPath)) {
+            return props;
+        }
+        return undefined;
+    }
+
+    private async cacheBoardProperties(fqbn: string, props: BoardProperties) {
+        try {
+            await this.context?.globalState.update(this.fqbnPropsKey(fqbn), props);
+        } catch (err) {
+            this.channel.appendLine(`[IntelliSense] Failed to cache board properties: ${err}`);
+        }
+    }
+
+    private isConfigComplete(configPath: string): boolean {
+        try {
+            const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            const compilerPath = parsed?.configurations?.[0]?.compilerPath;
+            return typeof compilerPath === 'string' && compilerPath.length > 0;
+        } catch (err) {
+            return false;
+        }
+    }
+
+    private buildConfig(FQBN: string, props: BoardProperties) {
+        const arduinoHPath = this.findArduinoH(props.includePaths);
+        return {
+            configurations: [
+                {
+                    name: FQBN,
+                    includePath: ['${workspaceFolder}/**', ...props.includePaths],
+                    forcedInclude: arduinoHPath ? [arduinoHPath] : [],
+                    defines: props.defines,
+                    compilerPath: props.compilerPath,
+                    cStandard: 'c11',
+                    cppStandard: 'c++17',
+                    intelliSenseMode: this.getIntelliSenseMode(props.compilerPath)
+                }
+            ],
+            version: 4
+        };
+    }
+
+    private extractIncludes(text: string): string {
+        const includeRegex = /^\s*#include\s*[<"]([^>"]+)[>"]/;
+        const activeIncludeStatements: string[] = [];
+        for (const line of text.split(/\r?\n/)) {
+            if (line.includes('include')) {
+                const match = line.match(includeRegex);
+                if (match) {
+                    activeIncludeStatements.push(match[1]);
+                }
+            }
+        }
+        return activeIncludeStatements.join('\n');
+    }
+
     private async checkIncludesAndRegenerate(sketchPath: string) {
 
         const configPath = path.join(path.dirname(sketchPath), '.vscode', 'c_cpp_properties.json');
-        const configExists = fs.existsSync(configPath);
 
         await this.ensureDefaultConfig(sketchPath);
 
@@ -175,34 +281,26 @@ export class IntelliSenseManager {
             }
         }
 
-        const includeRegex = /^\s*#include\s+[<"]([^>"]+)[>"]/;
-        const lines = text.split(/\r?\n/);
-
-        const activeIncludeStatements: string[] = [];
-        for (const line of lines) {
-            if (line.includes('include')) {
-                const match = line.match(includeRegex);
-                if (match) {
-                    activeIncludeStatements.push(match[1]);
-                }
-            }
-        }
-
-        const newActiveIncludes = activeIncludeStatements.join('\n');
+        const newActiveIncludes = this.extractIncludes(text);
         const oldActive = this.includeActiveCache[sketchPath] || '';
+        const configComplete = this.isConfigComplete(configPath);
 
-        if (newActiveIncludes !== oldActive || !configExists) {
-            this.includeActiveCache[sketchPath] = newActiveIncludes;
-            this.channel.appendLine(`[IntelliSense] #includes changed or config missing, regenerating IntelliSense for ${sketchPath}`);
-            this.regenerateIntellisense(sketchPath);
+        if (newActiveIncludes !== oldActive || !configComplete) {
+            this.channel.appendLine(`[IntelliSense] #includes changed or config incomplete, regenerating IntelliSense for ${sketchPath}`);
+            this.regenerateIntellisense(sketchPath, newActiveIncludes);
         } else {
-            this.channel.appendLine(`[IntelliSense] No change in #includes and config exists for ${sketchPath}, skipping regeneration`);
+            this.channel.appendLine(`[IntelliSense] No change in #includes and config is complete for ${sketchPath}, skipping regeneration`);
         }
     }
 
-    private async regenerateIntellisense(sketchPath: string) {
+    private async regenerateIntellisense(sketchPath: string, activeIncludes?: string) {
+        if (activeIncludes === undefined) {
+            activeIncludes = this.includeActiveCache[sketchPath] || '';
+        }
+
         if (this.isRegenerating[sketchPath]) {
-            this.channel.appendLine(`[IntelliSense] Skipping regeneration - already running for ${sketchPath}`);
+            this.pendingRegenerate[sketchPath] = true;
+            this.channel.appendLine(`[IntelliSense] Regeneration already running for ${sketchPath}, queued a follow-up run`);
             return;
         }
 
@@ -213,11 +311,11 @@ export class IntelliSenseManager {
 
         try {
             await fsPromises.mkdir(vscodeDir, { recursive: true });
+            await this.removeLegacySketchCopy(sketchPath);
 
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const FQBN = config.get<string>('board') || 'arduino:avr:uno';
 
-            const activeIncludes = this.includeActiveCache[sketchPath] || '';
             this.channel.appendLine(`[IntelliSense] Active includes found: ${activeIncludes.split('\n').join(', ')}`);
 
             const cache = this.compilationCache[sketchPath];
@@ -232,7 +330,6 @@ export class IntelliSenseManager {
 
                 if (!newProps) {
                     this.channel.appendLine('[IntelliSense] Failed to get board properties');
-                    this.isRegenerating[sketchPath] = false;
                     return;
                 }
 
@@ -245,32 +342,21 @@ export class IntelliSenseManager {
                 };
             }
 
-            const arduinoHPath = this.findArduinoH(props.includePaths);
-
-            const cCppConfig = {
-                configurations: [
-                    {
-                        name: FQBN,
-                        includePath: ['${workspaceFolder}/**', ...props.includePaths],
-                        forcedInclude: arduinoHPath ? [arduinoHPath] : [],
-                        defines: props.defines,
-                        compilerPath: props.compilerPath,
-                        cStandard: 'c11',
-                        cppStandard: 'c++17',
-                        intelliSenseMode: this.getIntelliSenseMode(props.compilerPath)
-                    }
-                ],
-                version: 4
-            };
-
             const cCppPath = path.join(vscodeDir, 'c_cpp_properties.json');
-            await fsPromises.writeFile(cCppPath, JSON.stringify(cCppConfig, null, 4));
+            await fsPromises.writeFile(cCppPath, JSON.stringify(this.buildConfig(FQBN, props), null, 4));
+            this.includeActiveCache[sketchPath] = activeIncludes;
+            await this.cacheBoardProperties(FQBN, props);
             this.channel.appendLine(`[IntelliSense] Generated IntelliSense configuration at ${cCppPath}`);
 
         } catch (err) {
             this.channel.appendLine(`[IntelliSense] Error generating IntelliSense configuration: ${err}`);
         } finally {
             this.isRegenerating[sketchPath] = false;
+            if (this.pendingRegenerate[sketchPath]) {
+                this.pendingRegenerate[sketchPath] = false;
+                this.channel.appendLine(`[IntelliSense] Running queued regeneration for ${sketchPath}`);
+                this.checkIncludesAndRegenerate(sketchPath);
+            }
         }
     }
 
@@ -278,13 +364,15 @@ export class IntelliSenseManager {
         return new Promise(async (resolve) => {
             let tempSketchPath = sketchPath;
             let tempDir: string | undefined;
+            let tempRoot: string | undefined;
 
             if (activeIncludes) {
                 const sketchContent = this._docs[sketchPath] ? this._docs[sketchPath] : await fsPromises.readFile(sketchPath, 'utf8');
                 const sketchName = path.basename(sketchPath, '.ino');
                 const originalSketchDir = path.dirname(sketchPath);
 
-                tempDir = path.join(originalSketchDir, '.vscode', sketchName);
+                tempRoot = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'vs-arduino-sketch-'));
+                tempDir = path.join(tempRoot, sketchName);
                 await fsPromises.mkdir(tempDir, { recursive: true });
 
                 tempSketchPath = path.join(tempDir, `${sketchName}.ino`);
@@ -302,7 +390,7 @@ export class IntelliSenseManager {
                     this.channel.appendLine(`[IntelliSense] Searching for header: ${headerFile}`);
                     try {
                         const searchPattern = `**/${headerFile}`;
-                        const files = await vscode.workspace.findFiles(searchPattern, '**/node_modules/**');
+                        const files = await vscode.workspace.findFiles(searchPattern, '{**/node_modules/**,**/.vscode/**}');
 
                         if (files.length > 0) {
                             const sourcePath = files[0].fsPath;
@@ -336,7 +424,16 @@ export class IntelliSenseManager {
 
             const cliPath = vscode.workspace.getConfiguration('vs-arduino').get<string>('arduinoCliPath') || 'arduino-cli';
             const configArg = await this.cliManager.getConfigFileArg();
-            const args = ['compile', ...configArg, '--fqbn', FQBN, tempSketchPath, '--verbose'];
+
+            let buildDir: string | undefined;
+            try {
+                buildDir = await fsPromises.mkdtemp(path.join(os.tmpdir(), 'vs-arduino-intellisense-'));
+            } catch (err) {
+                this.channel.appendLine(`[IntelliSense] Warning: Failed to create build directory: ${err}`);
+            }
+
+            const buildPathArg = buildDir ? ['--build-path', buildDir] : [];
+            const args = ['compile', ...configArg, '--fqbn', FQBN, ...buildPathArg, tempSketchPath, '--verbose'];
             const proc = spawn(`"${cliPath}"`, args, { shell: true });
             let stdout = '';
             let stderr = '';
@@ -344,11 +441,19 @@ export class IntelliSenseManager {
             proc.stdout.on('data', (data: Buffer) => stdout += data.toString());
             proc.stderr.on('data', (data: Buffer) => stderr += data.toString());
 
+            proc.on('error', (err) => {
+                this.channel.appendLine(`[IntelliSense] Failed to run arduino-cli: ${err}`);
+                resolve(null);
+            });
+
             proc.on('close', async () => {
                 try {
-                    if (tempDir) {
-                        this.channel.appendLine(`[IntelliSense] Cleaning up temp directory: ${tempDir}`);
-                        await fsPromises.rm(tempDir, { recursive: true, force: true });
+                    if (tempRoot) {
+                        this.channel.appendLine(`[IntelliSense] Cleaning up temp directory: ${tempRoot}`);
+                        await fsPromises.rm(tempRoot, { recursive: true, force: true });
+                    }
+                    if (buildDir) {
+                        await fsPromises.rm(buildDir, { recursive: true, force: true });
                     }
                 } catch (err) {
                     this.channel.appendLine(`[IntelliSense] Warning: Failed to clean up directories: ${err}`);
@@ -452,6 +557,10 @@ export class IntelliSenseManager {
                         }
 
                         const stdLibProc = spawn(compilerPath, ['-dM', '-E', '-x', 'c++', '-']);
+                        stdLibProc.on('error', (err) => {
+                            this.channel.appendLine(`[IntelliSense] Failed to query compiler defines: ${err}`);
+                            resolve({ includePaths, defines: [...new Set(defines)], compilerPath });
+                        });
                         stdLibProc.stdin.write('#include <stdint.h>\n#include <stdlib.h>\n#include <string.h>\n#include <stdio.h>\n');
                         stdLibProc.stdin.end();
 
@@ -492,6 +601,10 @@ export class IntelliSenseManager {
 
                             defineArgs.push('-');
                             const defineProc = spawn(compilerPath, defineArgs);
+                            defineProc.on('error', (err) => {
+                                this.channel.appendLine(`[IntelliSense] Failed to query hardware defines: ${err}`);
+                                resolve({ includePaths, defines: [...new Set(defines)], compilerPath });
+                            });
                             defineProc.stdin.write(includeHeaders);
                             defineProc.stdin.end();
 
@@ -518,6 +631,9 @@ export class IntelliSenseManager {
                                 });
                             });
                         });
+                    } else {
+                        this.channel.appendLine('[IntelliSense] Could not identify compiler executable in output');
+                        resolve(null);
                     }
                 } else {
                     this.channel.appendLine('[IntelliSense] No compiler command found in output');
