@@ -40,7 +40,8 @@
 
 ### Biên dịch & Nạp code
 - **Compile/Verify** và **Upload** chỉ với một cú nhấp ngay trên thanh công cụ, vận hành bởi `arduino-cli`.
-- Log biên dịch và nạp code hiển thị trực tiếp trong kênh `Output > VS Arduino`.
+- Log biên dịch và nạp code hiển thị trực tiếp trong kênh `Output > VS Arduino`, được tô màu theo nhãn và mức độ; log IntelliSense nằm riêng ở kênh `VS Arduino: IntelliSense`.
+- Chạy bất kỳ lệnh `arduino-cli` nào từ Command Palette và theo dõi ngay trong output, kể cả khi lệnh yêu cầu nhập phản hồi.
 - Sketch đang mở được tự động nhận diện — nhấp chuột phải vào bất kỳ file `.ino` nào để biên dịch hoặc nạp trực tiếp.
 
 ### Serial Monitor
@@ -54,14 +55,15 @@
 - **Xuất CSV** một chạm để phân tích ngoại tuyến.
 
 ### Gỡ lỗi phần cứng
-- Bộ máy **Cortex-Debug** được nhúng sẵn bên trong extension — không cần cài thêm extension phụ trợ nào.
+- Bộ máy **Cortex-Debug** được nhúng sẵn bên trong extension, kết hợp với bộ extension phụ trợ **mcu-debug** (tự động cài đặt) cho các view gỡ lỗi.
 - Nhấn *Debug Sketch*, VS Arduino tự động xác định toolchain, GDB server và file SVD, rồi dừng gọn gàng tại hàm `setup()` của sketch.
-- Đầy đủ công cụ gỡ lỗi: các view **Peripherals (SVD)**, **Registers**, **Memory**, **Disassembly** và **RTOS**.
+- Đầy đủ công cụ gỡ lỗi: các view **Peripherals (SVD)**, **Memory**, **Disassembly**, **Live Watch** và **RTOS**; thanh ghi CPU hiển thị trong panel Variables.
 
 ### Board & Library Manager
 - Tìm kiếm, cài đặt, cập nhật, hạ cấp và gỡ platform lẫn thư viện qua giao diện hiện đại.
 - Chọn từng phiên bản cụ thể để kiểm soát chính xác các phụ thuộc.
 - Nhấp chuột phải vào mục đã cài đặt và chọn **Examples** để duyệt các sketch ví dụ đi kèm theo dạng danh sách lồng nhau.
+- Hoặc chạy **VS Arduino: Open Example Sketch** rồi chọn board package hay thư viện trước — không cần mở cửa sổ manager.
 - Khi mở một ví dụ, sketch được sao chép vào sketchbook trước, sau đó hỏi bạn muốn mở ở cửa sổ hiện tại hay cửa sổ mới.
 - Board và thư viện đã lỗi thời được gộp chung vào một thông báo kèm nút cập nhật nhanh.
 
@@ -119,7 +121,7 @@ Cài từ một trong hai kho:
 | `vs-arduino.checkForUpdates` | Kiểm tra bản cập nhật cho board và thư viện đã cài khi khởi động | `true` |
 | `vs-arduino.ignoredUpdates` | Danh sách board và thư viện không nhận thông báo cập nhật | `[]` |
 
-Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, định dạng thanh ghi, panel RTOS) có thể tinh chỉnh trong mục settings **Cortex-Debug**.
+Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, định dạng thanh ghi, live watch) có thể tinh chỉnh trong các mục settings **Cortex-Debug**; các view gỡ lỗi có settings riêng trong mục **mcu-debug**.
 
 ## Lệnh & Phím tắt
 
@@ -134,6 +136,8 @@ Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, đị
 | `VS Arduino: Upload Sketch` | Nạp sketch từ menu chuột phải |
 | `VS Arduino: Open Serial Monitor` | Mở Serial Monitor |
 | `VS Arduino: Open Serial Plotter` | Mở Serial Plotter |
+| `VS Arduino: Open Example Sketch` | Duyệt ví dụ từ board package hoặc thư viện đã cài |
+| `VS Arduino: Run arduino-cli Command` | Chạy lệnh `arduino-cli` bất kỳ và xem log trong output |
 | `VS Arduino: Debug Sketch` | Bắt đầu phiên gỡ lỗi phần cứng |
 | `Open VS Arduino` | Mở view VS Arduino trên Activity Bar |
 

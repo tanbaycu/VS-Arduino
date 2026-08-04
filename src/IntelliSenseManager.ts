@@ -60,6 +60,8 @@ export class IntelliSenseManager {
                 this.checkIncludesAndRegenerate(doc.fileName);
             });
 
+        this.scanWorkspaceSketches();
+
         context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(doc => {
             if (!doc.fileName.endsWith('.ino') || this.isInsideVscodeDir(doc.fileName)) return;
             this._docs[doc.fileName] = doc.getText();
@@ -106,6 +108,19 @@ export class IntelliSenseManager {
 
     private isInsideVscodeDir(filePath: string): boolean {
         return filePath.split(/[\\/]/).includes('.vscode');
+    }
+
+    private async scanWorkspaceSketches() {
+        try {
+            const files = await vscode.workspace.findFiles('**/*.ino', '{**/node_modules/**,**/.vscode/**}', 10);
+            for (const file of files) {
+                if (this._docs[file.fsPath] !== undefined) continue;
+                this.channel.appendLine(`[IntelliSense] Found workspace sketch ${file.fsPath}, ensuring IntelliSense configuration`);
+                await this.checkIncludesAndRegenerate(file.fsPath);
+            }
+        } catch (err) {
+            this.channel.appendLine(`[IntelliSense] Workspace sketch scan failed: ${err}`);
+        }
     }
 
     private async removeLegacySketchCopy(sketchPath: string) {

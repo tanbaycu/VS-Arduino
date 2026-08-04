@@ -23,27 +23,27 @@ export class ArduinoCliManager {
     ) {}
 
     public async initialize(): Promise<void> {
-        this.outputChannel.appendLine('Checking for arduino-cli...');
+        this.outputChannel.appendLine('[Setup] Checking for arduino-cli...');
 
         try {
             const config = vscode.workspace.getConfiguration('vs-arduino');
             const configuredPath = config.get<string>('arduinoCliPath');
 
             if (configuredPath) {
-                this.outputChannel.appendLine(`Configured arduino-cli path found: ${configuredPath}`);
+                this.outputChannel.appendLine(`[Setup] Configured arduino-cli path found: ${configuredPath}`);
                 await this.verifyCliPath(configuredPath);
                 return;
             }
 
-            this.outputChannel.appendLine('Checking system PATH for arduino-cli...');
+            this.outputChannel.appendLine('[Setup] Checking system PATH for arduino-cli...');
             const { stdout } = await execAsync('arduino-cli version');
-            this.outputChannel.appendLine(`Found arduino-cli in PATH: ${stdout.trim()}`);
+            this.outputChannel.appendLine(`[Setup] Found arduino-cli in PATH: ${stdout.trim()}`);
 
             await config.update('arduinoCliPath', 'arduino-cli', vscode.ConfigurationTarget.Global);
-            this.outputChannel.appendLine('Saved "arduino-cli" to workspace configuration.');
+            this.outputChannel.appendLine('[Setup] Saved "arduino-cli" to workspace configuration.');
 
         } catch (error) {
-            this.outputChannel.appendLine('arduino-cli not found in PATH or configured path is invalid.');
+            this.outputChannel.appendLine('[Setup] arduino-cli not found in PATH or configured path is invalid.');
             await this.promptUserForCli();
         }
     }
@@ -51,9 +51,9 @@ export class ArduinoCliManager {
     private async verifyCliPath(cliPath: string): Promise<void> {
         try {
             const { stdout } = await execAsync(`"${cliPath}" version`);
-            this.outputChannel.appendLine(`arduino-cli verified successfully: ${stdout.trim()}`);
+            this.outputChannel.appendLine(`[Setup] arduino-cli verified successfully: ${stdout.trim()}`);
         } catch (error) {
-            this.outputChannel.appendLine(`Configured arduino-cli path is invalid: ${cliPath}`);
+            this.outputChannel.appendLine(`[Setup] Configured arduino-cli path is invalid: ${cliPath}`);
             throw error;
         }
     }
@@ -73,7 +73,7 @@ export class ArduinoCliManager {
         } else if (choice === browseOption) {
             await this.browseForArduinoCli();
         } else {
-            this.outputChannel.appendLine('arduino-cli configuration skipped by user.');
+            this.outputChannel.appendLine('[Setup] arduino-cli configuration skipped by user.');
         }
     }
 
@@ -157,7 +157,7 @@ export class ArduinoCliManager {
     }
 
     private async downloadArduinoCli(): Promise<void> {
-        this.outputChannel.appendLine('Downloading arduino-cli...');
+        this.outputChannel.appendLine('[Setup] Downloading arduino-cli...');
 
         try {
             const extensionFolder = this.context.globalStorageUri.fsPath;
@@ -165,23 +165,23 @@ export class ArduinoCliManager {
 
             let version = '1.5.1';
             try {
-                this.outputChannel.appendLine('Fetching latest arduino-cli version from GitHub API...');
+                this.outputChannel.appendLine('[Setup] Fetching latest arduino-cli version from GitHub API...');
                 version = await this.getLatestVersion();
-                this.outputChannel.appendLine(`Latest version found: ${version}`);
+                this.outputChannel.appendLine(`[Setup] Latest version found: ${version}`);
             } catch (e) {
-                this.outputChannel.appendLine(`Failed to fetch latest version, falling back to stable ${version}. Error: ${e}`);
+                this.outputChannel.appendLine(`[Setup] Failed to fetch latest version, falling back to stable ${version}. Error: ${e}`);
             }
 
             const archiveName = this.getReleaseFileName(version);
             const archivePath = path.join(extensionFolder, archiveName);
             const downloadUrl = `https://github.com/arduino/arduino-cli/releases/download/v${version}/${archiveName}`;
 
-            this.outputChannel.appendLine(`Downloading from: ${downloadUrl}`);
+            this.outputChannel.appendLine(`[Setup] Downloading from: ${downloadUrl}`);
             vscode.window.showInformationMessage(`Downloading arduino-cli v${version}...`);
             await this.downloadFile(downloadUrl, archivePath);
-            this.outputChannel.appendLine(`Downloaded archive to: ${archivePath}`);
+            this.outputChannel.appendLine(`[Setup] Downloaded archive to: ${archivePath}`);
 
-            this.outputChannel.appendLine('Extracting archive...');
+            this.outputChannel.appendLine('[Setup] Extracting archive...');
             const isWindows = os.platform() === 'win32';
             if (isWindows) {
                 const cmd = `powershell.exe -NoProfile -Command "Expand-Archive -Path '${archivePath.replace(/'/g, "''")}' -DestinationPath '${extensionFolder.replace(/'/g, "''")}' -Force"`;
@@ -190,7 +190,7 @@ export class ArduinoCliManager {
                 const cmd = `tar -xzf "${archivePath}" -C "${extensionFolder}"`;
                 await execAsync(cmd);
             }
-            this.outputChannel.appendLine('Extraction completed.');
+            this.outputChannel.appendLine('[Setup] Extraction completed.');
 
             await fsPromises.unlink(archivePath).catch(() => {});
 
@@ -201,18 +201,18 @@ export class ArduinoCliManager {
                 await execAsync(`chmod +x "${binaryPath}"`);
             }
 
-            this.outputChannel.appendLine('Verifying extracted binary...');
+            this.outputChannel.appendLine('[Setup] Verifying extracted binary...');
             await this.verifyCliPath(binaryPath);
 
             const config = vscode.workspace.getConfiguration('vs-arduino');
             await config.update('arduinoCliPath', binaryPath, vscode.ConfigurationTarget.Global);
-            this.outputChannel.appendLine(`Configured arduinoCliPath: ${binaryPath}`);
+            this.outputChannel.appendLine(`[Setup] Configured arduinoCliPath: ${binaryPath}`);
 
             vscode.window.showInformationMessage(`arduino-cli v${version} installed and configured successfully!`);
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            this.outputChannel.appendLine(`Failed to install arduino-cli: ${errorMessage}`);
+            this.outputChannel.appendLine(`[Setup] Failed to install arduino-cli: ${errorMessage}`);
             vscode.window.showErrorMessage(`Failed to install arduino-cli: ${errorMessage}`);
         }
     }
@@ -272,13 +272,13 @@ export class ArduinoCliManager {
                 const config = vscode.workspace.getConfiguration('vs-arduino');
                 await config.update('arduinoCliPath', selectedPath, vscode.ConfigurationTarget.Global);
 
-                this.outputChannel.appendLine(`Saved custom path to configuration: ${selectedPath}`);
+                this.outputChannel.appendLine(`[Setup] Saved custom path to configuration: ${selectedPath}`);
                 vscode.window.showInformationMessage('arduino-cli configured successfully!');
             } catch (error) {
                 vscode.window.showErrorMessage('Selected file is not a valid arduino-cli executable.');
             }
         } else {
-            this.outputChannel.appendLine('arduino-cli selection cancelled by user.');
+            this.outputChannel.appendLine('[Setup] arduino-cli selection cancelled by user.');
         }
     }
 
@@ -328,7 +328,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['board', 'listall', '--format', 'json']);
             return data.boards || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting board list: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting board list: ${error}`);
             throw error;
         }
     }
@@ -338,7 +338,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['board', 'details', '-b', fqbn, '--format', 'json']);
             return data.programmers || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting programmers: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting programmers: ${error}`);
             throw error;
         }
     }
@@ -353,7 +353,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(args);
             return data;
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting debug info: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting debug info: ${error}`);
             throw error;
         }
     }
@@ -367,7 +367,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(args);
             return data.libraries || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error searching library: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error searching library: ${error}`);
             throw error;
         }
     }
@@ -381,7 +381,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(args);
             return data?.platforms || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error searching core: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error searching core: ${error}`);
             throw error;
         }
     }
@@ -392,7 +392,7 @@ export class ArduinoCliManager {
             const lib = (data.libraries || []).find((l: any) => l.name === name || (l.library && l.library.name === name));
             return lib;
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting library details: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting library details: ${error}`);
             throw error;
         }
     }
@@ -402,7 +402,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['core', 'search', name, '--all', '--format', 'json']);
             return Array.isArray(data) && data.length > 0 ? data[0] : data;
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting core details: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting core details: ${error}`);
             throw error;
         }
     }
@@ -410,26 +410,26 @@ export class ArduinoCliManager {
     public async installLibrary(name: string, version?: string): Promise<void> {
         const pkg = version ? `${name}@${version}` : name;
         this.outputChannel.show(true);
-        this.outputChannel.appendLine(`Installing library ${pkg}...`);
+        this.outputChannel.appendLine(`[Packages] Installing library ${pkg}...`);
         await this.runCliCommandStream(['lib', 'install', pkg]);
     }
 
     public async installCore(name: string, version?: string): Promise<void> {
         const pkg = version ? `${name}@${version}` : name;
         this.outputChannel.show(true);
-        this.outputChannel.appendLine(`Installing core ${pkg}...`);
+        this.outputChannel.appendLine(`[Packages] Installing core ${pkg}...`);
         await this.runCliCommandStream(['core', 'install', pkg]);
     }
 
     public async uninstallLibrary(name: string): Promise<void> {
         this.outputChannel.show(true);
-        this.outputChannel.appendLine(`Uninstalling library ${name}...`);
+        this.outputChannel.appendLine(`[Packages] Uninstalling library ${name}...`);
         await this.runCliCommandStream(['lib', 'uninstall', name]);
     }
 
     public async uninstallCore(name: string): Promise<void> {
         this.outputChannel.show(true);
-        this.outputChannel.appendLine(`Uninstalling core ${name}...`);
+        this.outputChannel.appendLine(`[Packages] Uninstalling core ${name}...`);
         await this.runCliCommandStream(['core', 'uninstall', name]);
     }
 
@@ -438,7 +438,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['lib', 'list', '--format', 'json']);
             return data.installed_libraries || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting installed libraries: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting installed libraries: ${error}`);
             throw error;
         }
     }
@@ -448,7 +448,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['core', 'list', '--format', 'json']);
             return data?.platforms || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting installed cores: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting installed cores: ${error}`);
             throw error;
         }
     }
@@ -476,20 +476,20 @@ export class ArduinoCliManager {
 
             return { libraries, cores };
         } catch (error) {
-            this.outputChannel.appendLine(`Error checking for outdated packages: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error checking for outdated packages: ${error}`);
             return { libraries: [], cores: [] };
         }
     }
 
     public async upgradeLibrary(name: string): Promise<void> {
         this.outputChannel.show(true);
-        this.outputChannel.appendLine(`Upgrading library ${name}...`);
+        this.outputChannel.appendLine(`[Packages] Upgrading library ${name}...`);
         await this.runCliCommandStream(['lib', 'upgrade', name]);
     }
 
     public async upgradeCore(id: string): Promise<void> {
         this.outputChannel.show(true);
-        this.outputChannel.appendLine(`Upgrading core ${id}...`);
+        this.outputChannel.appendLine(`[Packages] Upgrading core ${id}...`);
         await this.runCliCommandStream(['core', 'upgrade', id]);
     }
 
@@ -498,7 +498,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['lib', 'examples', name, '--format', 'json']);
             return data?.examples || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting library examples: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting library examples: ${error}`);
             return [];
         }
     }
@@ -526,7 +526,7 @@ export class ArduinoCliManager {
                 return installDir.includes(marker);
             });
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting core examples: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting core examples: ${error}`);
             return [];
         }
     }
@@ -537,7 +537,7 @@ export class ArduinoCliManager {
             const directories = data?.config?.directories ?? data?.directories;
             return directories?.user || null;
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting sketchbook directory: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting sketchbook directory: ${error}`);
             return null;
         }
     }
@@ -559,7 +559,7 @@ export class ArduinoCliManager {
             const data = await this.runCliCommandJson(['board', 'list', '--format', 'json']);
             return data.detected_ports || [];
         } catch (error) {
-            this.outputChannel.appendLine(`Error getting ports: ${error}`);
+            this.outputChannel.appendLine(`[CLI] Error getting ports: ${error}`);
             throw error;
         }
     }

@@ -26,7 +26,7 @@ export class ArduinoDebugConfigurationProvider implements vscode.DebugConfigurat
         const buildPath = path.join(folder.uri.fsPath, 'build');
 
         try {
-            this.outputChannel.appendLine(`\n--- Fetching debug info for ${board} ---`);
+            this.outputChannel.appendLine(`\n[Debug] Fetching debug info for ${board}`);
             const debugInfo = await this.cliManager.getDebugInfo(board, sketchPath, programmer, port, buildPath);
 
             if (!debugInfo || !debugInfo.executable) {
@@ -76,7 +76,7 @@ export class ArduinoDebugConfigurationProvider implements vscode.DebugConfigurat
             return undefined;
 
         } catch (error) {
-            this.outputChannel.appendLine(`Debug info error: ${error}`);
+            this.outputChannel.appendLine(`[Debug] Debug info error: ${error}`);
             vscode.window.showErrorMessage('Failed to initialize debug session. Board might not support debugging. See output for details.');
             return undefined;
         }

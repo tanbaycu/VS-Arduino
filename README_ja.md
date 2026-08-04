@@ -40,7 +40,8 @@
 
 ### ビルド & 書き込み
 - エディタのツールバーからワンクリックで **Compile/Verify** と **Upload** を実行。バックエンドは `arduino-cli` です。
-- ビルドと書き込みのログは `Output > VS Arduino` チャンネルにリアルタイムで表示されます。
+- ビルドと書き込みのログは `Output > VS Arduino` チャンネルにリアルタイムで表示され、タグと重要度に応じて色分けされます。IntelliSense のログは `VS Arduino: IntelliSense` チャンネルに分離されています。
+- 任意の `arduino-cli` コマンドをコマンドパレットから実行し、対話的な入力も含めて出力チャンネルで確認できます。
 - 開いているスケッチを自動認識 — 任意の `.ino` ファイルを右クリックして直接コンパイル・書き込みできます。
 
 ### シリアルモニター
@@ -54,14 +55,15 @@
 - ワンクリックで **CSV エクスポート**し、オフラインで分析できます。
 
 ### ハードウェアデバッグ
-- **Cortex-Debug** エンジンを拡張機能に内蔵 — 追加の拡張機能は不要です。
+- **Cortex-Debug** エンジンを拡張機能に内蔵し、デバッグビューは **mcu-debug** 連携拡張機能(自動インストール)が提供します。
 - *Debug Sketch* を押すだけで、VS Arduino がツールチェーン・GDB サーバー・SVD ファイルを自動解決し、スケッチの `setup()` 関数で正確に停止します。
-- 充実したデバッグツール:**Peripherals (SVD)**、**Registers**、**Memory**、**Disassembly**、**RTOS** ビュー。
+- 充実したデバッグツール:**Peripherals (SVD)**、**Memory**、**Disassembly**、**Live Watch**、**RTOS** ビュー。CPU レジスタは Variables パネルに表示されます。
 
 ### ボード & ライブラリマネージャー
 - モダンな UI でプラットフォームとライブラリを検索・インストール・更新・ダウングレード・アンインストール。
 - バージョン単位の選択で依存関係を正確にコントロールできます。
 - インストール済みの項目を右クリックして **Examples** を選ぶと、同梱のサンプルスケッチを入れ子のリストから辿れます。
+- **VS Arduino: Open Example Sketch** を実行すれば、ボードパッケージかライブラリを先に選ぶだけでマネージャーを開かずに辿れます。
 - サンプルを開くとまずスケッチブックへコピーされ、その後で現在のウィンドウか新しいウィンドウかを尋ねられます。
 - 更新可能なボードパッケージとライブラリは 1 つの通知にまとめられ、その場で更新できます。
 
@@ -119,7 +121,7 @@
 | `vs-arduino.checkForUpdates` | 起動時にボードパッケージとライブラリの更新を確認する | `true` |
 | `vs-arduino.ignoredUpdates` | 更新通知の対象から除外するボードパッケージとライブラリ | `[]` |
 
-高度なデバッグ設定(ツールチェーンパス、GDB サーバー、レジスタ表示形式、RTOS パネル)は **Cortex-Debug** 設定セクションで調整できます。
+高度なデバッグ設定(ツールチェーンパス、GDB サーバー、レジスタ表示形式、Live Watch)は **Cortex-Debug** 設定セクションで調整できます。デバッグビューの設定は **mcu-debug** セクションにあります。
 
 ## コマンド & キーバインド
 
@@ -134,6 +136,8 @@
 | `VS Arduino: Upload Sketch` | コンテキストメニューからスケッチを書き込み |
 | `VS Arduino: Open Serial Monitor` | シリアルモニターを開く |
 | `VS Arduino: Open Serial Plotter` | シリアルプロッターを開く |
+| `VS Arduino: Open Example Sketch` | インストール済みのボードパッケージ / ライブラリのサンプルを辿る |
+| `VS Arduino: Run arduino-cli Command` | 任意の `arduino-cli` コマンドを実行し出力チャンネルに表示 |
 | `VS Arduino: Debug Sketch` | ハードウェアデバッグセッションを開始 |
 | `Open VS Arduino` | アクティビティバーの VS Arduino ビューを開く |
 

@@ -40,7 +40,8 @@
 
 ### Build & Upload
 - One-click **Compile/Verify** and **Upload** straight from the editor toolbar, powered by `arduino-cli`.
-- Build and upload logs stream live into the `Output > VS Arduino` channel.
+- Build and upload logs stream live into the `Output > VS Arduino` channel, colorized by tag and severity; IntelliSense analysis has its own `VS Arduino: IntelliSense` channel.
+- Run any `arduino-cli` command from the Command Palette and watch it execute in the output channel, including interactive prompts.
 - The active sketch is detected automatically — right-click any `.ino` file to compile or upload it directly.
 
 ### Serial Monitor
@@ -54,14 +55,15 @@
 - One-click **CSV export** for offline analysis.
 
 ### Hardware Debugging
-- An embedded **Cortex-Debug** engine ships inside the extension — no companion extensions to install.
+- An embedded **Cortex-Debug** engine ships inside the extension, paired with the **mcu-debug** companion extensions (installed automatically) for the debugging views.
 - Press *Debug Sketch* and VS Arduino resolves the toolchain, GDB server, and SVD file automatically, then halts cleanly at your sketch's `setup()` function.
-- Full debug tooling: **Peripherals (SVD)**, **Registers**, **Memory**, **Disassembly**, and **RTOS** views.
+- Full debug tooling: **Peripherals (SVD)**, **Memory**, **Disassembly**, **Live Watch**, and **RTOS** views, with CPU registers shown in the Variables panel.
 
 ### Board & Library Managers
 - Search, install, update, downgrade, and uninstall platforms and libraries through a modern UI.
 - Per-version selection for precise dependency control.
 - Right-click any installed entry and choose **Examples** to browse the bundled example sketches in a nested picker.
+- Or run **VS Arduino: Open Example Sketch** and pick the board package or library first — no manager window needed.
 - Opening an example copies it into your sketchbook first, then asks whether to use this window or a new one.
 - Outdated board packages and libraries are reported in a single notification with a one-click update action.
 
@@ -119,7 +121,7 @@ Install from either store:
 | `vs-arduino.checkForUpdates` | Check installed board packages and libraries for updates on startup | `true` |
 | `vs-arduino.ignoredUpdates` | Board packages and libraries excluded from update notifications | `[]` |
 
-Advanced debugging behavior (toolchain paths, GDB server binaries, register formatting, RTOS panel) can be tuned under the **Cortex-Debug** settings section.
+Advanced debugging behavior (toolchain paths, GDB server binaries, register formatting, live watch) can be tuned under the **Cortex-Debug** settings sections; the debugging views have their own settings under **mcu-debug**.
 
 ## Commands & Keybindings
 
@@ -134,6 +136,8 @@ Advanced debugging behavior (toolchain paths, GDB server binaries, register form
 | `VS Arduino: Upload Sketch` | Flash a sketch from the file context menu |
 | `VS Arduino: Open Serial Monitor` | Open the Serial Monitor |
 | `VS Arduino: Open Serial Plotter` | Open the Serial Plotter |
+| `VS Arduino: Open Example Sketch` | Browse examples from an installed board package or library |
+| `VS Arduino: Run arduino-cli Command` | Run any `arduino-cli` command and stream it into the output channel |
 | `VS Arduino: Debug Sketch` | Start a hardware debug session |
 | `Open VS Arduino` | Focus the VS Arduino activity-bar view |
 

@@ -40,7 +40,8 @@
 
 ### 编译与烧录
 - 通过编辑器工具栏一键 **Compile/Verify** 和 **Upload**,底层由 `arduino-cli` 驱动。
-- 编译和烧录日志实时输出到 `Output > VS Arduino` 通道。
+- 编译和烧录日志实时输出到 `Output > VS Arduino` 通道,并按标签与严重级别着色;IntelliSense 日志独立于 `VS Arduino: IntelliSense` 通道。
+- 可从命令面板运行任意 `arduino-cli` 命令,并在输出通道中查看执行过程,包括交互式提问。
 - 自动识别当前草图 — 右键任意 `.ino` 文件即可直接编译或烧录。
 
 ### 串口监视器
@@ -54,14 +55,15 @@
 - 一键**导出 CSV**,便于离线分析。
 
 ### 硬件调试
-- 扩展内置 **Cortex-Debug** 调试引擎 — 无需安装任何配套扩展。
+- 扩展内置 **Cortex-Debug** 调试引擎,并搭配 **mcu-debug** 配套扩展(自动安装)提供调试视图。
 - 点击 *Debug Sketch*,VS Arduino 会自动解析工具链、GDB 服务器和 SVD 文件,并精确停在草图的 `setup()` 函数处。
-- 完整的调试工具:**Peripherals (SVD)**、**Registers**、**Memory**、**Disassembly** 和 **RTOS** 视图。
+- 完整的调试工具:**Peripherals (SVD)**、**Memory**、**Disassembly**、**Live Watch** 和 **RTOS** 视图,CPU 寄存器显示在 Variables 面板中。
 
 ### 开发板与库管理器
 - 通过现代化界面搜索、安装、更新、降级和卸载平台与库。
 - 支持按版本选择,精确控制依赖。
 - 右键点击已安装的条目并选择 **Examples**,即可在多级列表中浏览随附的示例程序。
+- 也可运行 **VS Arduino: Open Example Sketch**,先选择开发板包或库,无需打开管理器窗口。
 - 打开示例时会先将其复制到草图本,然后询问在当前窗口还是新窗口中打开。
 - 可更新的开发板与库会合并为一条通知,并提供一键更新。
 
@@ -119,7 +121,7 @@
 | `vs-arduino.checkForUpdates` | 启动时检查已安装开发板与库的更新 | `true` |
 | `vs-arduino.ignoredUpdates` | 不接收更新通知的开发板与库 | `[]` |
 
-高级调试行为(工具链路径、GDB 服务器、寄存器显示格式、RTOS 面板)可在 **Cortex-Debug** 设置分区中调整。
+高级调试行为(工具链路径、GDB 服务器、寄存器显示格式、Live Watch)可在 **Cortex-Debug** 设置分区中调整;调试视图的设置位于 **mcu-debug** 分区。
 
 ## 命令与快捷键
 
@@ -134,6 +136,8 @@
 | `VS Arduino: Upload Sketch` | 从右键菜单烧录草图 |
 | `VS Arduino: Open Serial Monitor` | 打开串口监视器 |
 | `VS Arduino: Open Serial Plotter` | 打开串口绘图器 |
+| `VS Arduino: Open Example Sketch` | 浏览已安装开发板包或库中的示例程序 |
+| `VS Arduino: Run arduino-cli Command` | 运行任意 `arduino-cli` 命令并在输出通道查看日志 |
 | `VS Arduino: Debug Sketch` | 开始硬件调试会话 |
 | `Open VS Arduino` | 聚焦活动栏中的 VS Arduino 视图 |
 

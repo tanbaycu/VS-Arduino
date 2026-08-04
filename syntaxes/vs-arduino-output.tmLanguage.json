@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "VS Arduino Output",
+  "scopeName": "source.vs-arduino-output",
+  "patterns": [
+    { "include": "#tag" },
+    { "include": "#error" },
+    { "include": "#warning" },
+    { "include": "#success" },
+    { "include": "#quoted" },
+    { "include": "#number" }
+  ],
+  "repository": {
+    "tag": {
+      "match": "\\[[^\\]\\n]*\\]",
+      "name": "token.info-token"
+    },
+    "error": {
+      "match": "(?i)\\b(error|errors|failed|failure|fatal|cannot|exception|invalid|not found|denied)\\b",
+      "name": "token.error-token"
+    },
+    "warning": {
+      "match": "(?i)\\b(warning|warnings|deprecated|skipped|missing|outdated)\\b",
+      "name": "token.warn-token"
+    },
+    "success": {
+      "match": "(?i)\\b(success|succeeded|successfully|completed|done|installed|verified|activated|up to date)\\b",
+      "name": "token.debug-token"
+    },
+    "quoted": {
+      "match": "\"[^\"\\n]*\"",
+      "name": "string.quoted.double.vs-arduino-output"
+    },
+    "number": {
+      "match": "\\b(0[xX][0-9a-fA-F]+|\\d+(\\.\\d+)*)\\b",
+      "name": "constant.numeric.vs-arduino-output"
+    }
+  }
+}

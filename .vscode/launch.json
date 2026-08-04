@@ -11,6 +11,12 @@
       "outFiles": [
         "${workspaceFolder}/out/**/*.js"
       ],
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/out/**"
+      ],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
       "preLaunchTask": "${defaultBuildTask}"
     },
     {

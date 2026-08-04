@@ -10,24 +10,36 @@ import { SerialConnectionManager } from './SerialConnectionManager';
 import { SerialMonitorProvider } from './SerialMonitorProvider';
 import { SerialPlotterProvider } from './SerialPlotterProvider';
 import { ArduinoDebugConfigurationProvider } from './ArduinoDebugConfigurationProvider';
-import { activateCortexDebugCore, deactivateCortexDebugCore } from './debugger/CortexDebugCore';
+import { CliCommandRunner } from './CliCommandRunner';
+import { activateCortexDebugCore, deactivateCortexDebugCore, ensureMcuDebugCompanions } from './debugger/CortexDebugCore';
 
 let outputChannel: vscode.OutputChannel;
+let intelliSenseChannel: vscode.OutputChannel;
 let statusBarBoard: vscode.StatusBarItem;
 let statusBarPort: vscode.StatusBarItem;
 let controlPanelProvider: ControlPanelProvider;
 
+const OUTPUT_LANGUAGE_ID = 'vs-arduino-output';
+const SKETCH_SCAFFOLD = 'void setup() {\n    \n}\n\nvoid loop() {\n    \n}\n';
+
 export function activate(context: vscode.ExtensionContext) {
-    outputChannel = vscode.window.createOutputChannel("VS Arduino");
-    context.subscriptions.push(outputChannel);
-    outputChannel.appendLine('VS Arduino extension activated.');
+    outputChannel = vscode.window.createOutputChannel('VS Arduino', OUTPUT_LANGUAGE_ID);
+    intelliSenseChannel = vscode.window.createOutputChannel('VS Arduino: IntelliSense', OUTPUT_LANGUAGE_ID);
+    context.subscriptions.push(outputChannel, intelliSenseChannel);
+    outputChannel.appendLine('[VS Arduino] Extension activated.');
 
-    activateCortexDebugCore(context, outputChannel);
+    setImmediate(() => {
+        activateCortexDebugCore(context, outputChannel);
 
-    const officialCortexDebug = vscode.extensions.getExtension('marus25.cortex-debug');
-    if (officialCortexDebug) {
-        vscode.window.showWarningMessage('You have the official Cortex-Debug extension (marus25) installed, which may conflict with the built-in version of VS Arduino. Please disable or uninstall it for the best experience.');
-    }
+        ensureMcuDebugCompanions(outputChannel).catch(err => {
+            outputChannel.appendLine(`[Debug] Companion setup failed: ${err instanceof Error ? err.message : String(err)}`);
+        });
+
+        const officialCortexDebug = vscode.extensions.getExtension('marus25.cortex-debug');
+        if (officialCortexDebug) {
+            vscode.window.showWarningMessage('You have the official Cortex-Debug extension (marus25) installed, which may conflict with the built-in version of VS Arduino. Please disable or uninstall it for the best experience.');
+        }
+    });
 
     const cliManager = new ArduinoCliManager(context, outputChannel);
     const updateChecker = new UpdateChecker(cliManager, outputChannel);
@@ -43,15 +55,15 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         updateChecker.checkAndNotify().catch(updateErr => {
-            outputChannel.appendLine(`Update check failed: ${updateErr instanceof Error ? updateErr.message : String(updateErr)}`);
+            outputChannel.appendLine(`[Update] Check failed: ${updateErr instanceof Error ? updateErr.message : String(updateErr)}`);
         });
     }).catch(err => {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        outputChannel.appendLine(`Initialization error: ${errorMsg}`);
+        outputChannel.appendLine(`[Setup] Initialization error: ${errorMsg}`);
         vscode.window.showErrorMessage(`VS Arduino Initialization error: ${errorMsg}`);
     });
 
-    const intelliSenseManager = new IntelliSenseManager(outputChannel, cliManager);
+    const intelliSenseManager = new IntelliSenseManager(intelliSenseChannel, cliManager);
     intelliSenseManager.initialize(context);
 
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('arduino');
@@ -167,7 +179,7 @@ export function activate(context: vscode.ExtensionContext) {
             }
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
-            outputChannel.appendLine(`Failed to list ports: ${errorMsg}`);
+            outputChannel.appendLine(`[Ports] Failed to list ports: ${errorMsg}`);
             vscode.window.showErrorMessage('Failed to list ports. See output for details.');
         }
     }));
@@ -232,6 +244,21 @@ export function activate(context: vscode.ExtensionContext) {
         await exampleBrowser.browse(itemName, managerType);
     }));
 
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.openExample', async () => {
+        try {
+            await exampleBrowser.pickAndBrowse();
+        } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            outputChannel.appendLine(`[Examples] Failed to list examples: ${errorMsg}`);
+            vscode.window.showErrorMessage('Failed to list examples. See output for details.');
+        }
+    }));
+
+    const cliCommandRunner = new CliCommandRunner(context, outputChannel, cliManager);
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.runCliCommand', async () => {
+        await cliCommandRunner.run();
+    }));
+
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.openSerialMonitor', () => {
         serialMonitorProvider.openInPanel();
     }));
@@ -263,7 +290,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 diagnosticCollection.clear();
                 outputChannel.show(true);
-                outputChannel.appendLine(`\n--- Compiling for ${board} ---`);
+                outputChannel.appendLine(`\n[Compile] Building for ${board}`);
                 const { stdout, stderr } = await cliManager.compile(board, sketchPath);
                 parseDiagnostics(stderr, diagnosticCollection);
                 vscode.window.showInformationMessage('Compilation succeeded!');
@@ -329,7 +356,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 diagnosticCollection.clear();
                 outputChannel.show(true);
-                outputChannel.appendLine(`\n--- Compiling for ${board} (debug mode) ---`);
+                outputChannel.appendLine(`\n[Debug] Building for ${board} with debug optimization`);
                 const { stderr } = await cliManager.compile(board, sketchPath, true, buildPath);
                 parseDiagnostics(stderr, diagnosticCollection);
                 return true;
@@ -381,7 +408,7 @@ export function activate(context: vscode.ExtensionContext) {
                 }
 
                 outputChannel.show(true);
-                outputChannel.appendLine(`\n--- Compiling & Uploading to ${board} on ${port} ---`);
+                outputChannel.appendLine(`\n[Upload] Building and uploading to ${board} on ${port}`);
                 await cliManager.upload(board, port, sketchPath);
                 vscode.window.showInformationMessage('Upload succeeded!');
 
@@ -413,7 +440,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 diagnosticCollection.clear();
                 outputChannel.show(true);
-                outputChannel.appendLine(`\n--- Compiling for ${board} ---`);
+                outputChannel.appendLine(`\n[Compile] Building for ${board}`);
                 const { stdout, stderr } = await cliManager.compile(board, sketchPath);
                 parseDiagnostics(stderr, diagnosticCollection);
                 vscode.window.showInformationMessage(`Compilation succeeded for ${path.basename(sketchPath)}!`);
@@ -452,7 +479,7 @@ export function activate(context: vscode.ExtensionContext) {
                 }
 
                 outputChannel.show(true);
-                outputChannel.appendLine(`\n--- Compiling & Uploading to ${board} on ${port} ---`);
+                outputChannel.appendLine(`\n[Upload] Building and uploading to ${board} on ${port}`);
                 await cliManager.upload(board, port, sketchPath);
                 vscode.window.showInformationMessage(`Upload succeeded for ${path.basename(sketchPath)}!`);
 
@@ -464,6 +491,90 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage('Upload failed. Check output for details.');
             }
         });
+    }));
+
+    context.subscriptions.push(vscode.workspace.onDidCreateFiles(async event => {
+        const scaffoldingEnabled = vscode.workspace.getConfiguration('vs-arduino').get<boolean>('inoScaffolding', true);
+        if (!scaffoldingEnabled) return;
+        for (const file of event.files) {
+            if (!file.fsPath.endsWith('.ino')) continue;
+            if (file.fsPath.split(/[\\/]/).includes('.vscode')) continue;
+            try {
+                const content = await vscode.workspace.fs.readFile(file);
+                if (content.byteLength === 0) {
+                    await vscode.workspace.fs.writeFile(file, Buffer.from(SKETCH_SCAFFOLD, 'utf8'));
+                }
+            } catch {
+            }
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.newSketch', async (uri?: vscode.Uri) => {
+        let targetDir: string | undefined;
+
+        if (uri) {
+            try {
+                const stat = await vscode.workspace.fs.stat(uri);
+                targetDir = stat.type === vscode.FileType.Directory ? uri.fsPath : path.dirname(uri.fsPath);
+            } catch {
+                targetDir = undefined;
+            }
+        }
+
+        if (!targetDir) {
+            targetDir = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+        }
+
+        if (!targetDir) {
+            vscode.window.showErrorMessage('Open a folder in the Explorer before creating a sketch.');
+            return;
+        }
+
+        const sketchName = await vscode.window.showInputBox({
+            prompt: 'Enter a name for the new sketch',
+            placeHolder: 'MySketch',
+            validateInput: value => {
+                const trimmed = value.trim();
+                if (!trimmed) {
+                    return 'Sketch name cannot be empty.';
+                }
+                if (!/^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$/.test(trimmed)) {
+                    return 'Sketch name may only contain letters, numbers, underscores, dots, and dashes, and must start with a letter, number, or underscore.';
+                }
+                if (trimmed.length > 63) {
+                    return 'Sketch name must be 63 characters or fewer.';
+                }
+                return undefined;
+            }
+        });
+
+        if (!sketchName) {
+            return;
+        }
+
+        const trimmedName = sketchName.trim();
+        const sketchDir = path.join(targetDir, trimmedName);
+        const sketchFile = path.join(sketchDir, `${trimmedName}.ino`);
+        const sketchFileUri = vscode.Uri.file(sketchFile);
+
+        try {
+            await vscode.workspace.fs.stat(sketchFileUri);
+            vscode.window.showErrorMessage(`A sketch named "${trimmedName}" already exists at this location.`);
+            return;
+        } catch {
+        }
+
+        const scaffold = vscode.workspace.getConfiguration('vs-arduino').get<boolean>('inoScaffolding', true) ? SKETCH_SCAFFOLD : '';
+
+        try {
+            await vscode.workspace.fs.createDirectory(vscode.Uri.file(sketchDir));
+            await vscode.workspace.fs.writeFile(sketchFileUri, Buffer.from(scaffold, 'utf8'));
+            const doc = await vscode.workspace.openTextDocument(sketchFileUri);
+            await vscode.window.showTextDocument(doc);
+        } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            vscode.window.showErrorMessage(`Failed to create sketch: ${errorMsg}`);
+        }
     }));
 }
 

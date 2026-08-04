@@ -4,6 +4,30 @@ All notable changes to the **VS Arduino** extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026.8.4]
+
+### Added
+
+- **`VS Arduino: Open Example Sketch`** command. Pick whether the example comes from a **Board Package** or a **Library**, choose the installed item, then browse its bundled sketches through the same nested picker used by the Board and Library managers.
+- **`VS Arduino: Run arduino-cli Command`** command. Type any full command (for example `arduino-cli lib list`) in a picker that remembers your recent commands and suggests common ones. Output streams into `Output > VS Arduino` under a `[Command "..."]` header with the panel opened automatically, and when the CLI asks a question the answer is collected through a yes/no picker or an input box and written back to the process.
+- **Colored output.** Both output channels use a dedicated syntax so `[Tag]` prefixes, errors, warnings, and success messages are highlighted. Every log line the extension writes now carries a tag such as `[Setup]`, `[Compile]`, `[Upload]`, `[Debug]`, `[Packages]`, or `[Command]`.
+- **Separate `VS Arduino: IntelliSense` output channel.** IntelliSense analysis logs no longer interleave with build and upload output in the main `VS Arduino` channel.
+
+### Changed
+
+- **Embedded Cortex-Debug core upgraded from 1.5.1 to 1.12.1.** The old built-in debugging views (Cortex Peripherals, Cortex Registers, RTOS panel, legacy memory viewer) are replaced by the dedicated **mcu-debug** companion extensions, declared as extension dependencies and installed automatically from the Marketplace / Open VSX: `mcu-debug.debug-tracker-vscode`, `mcu-debug.memory-view`, `mcu-debug.rtos-views`, and `mcu-debug.peripheral-viewer`.
+- New **Cortex Live Watch** view from the upgraded core, and CPU registers now appear as a scope in the Variables panel instead of a separate view.
+- VS Arduino registers its debug type with the companion extensions on startup (`memory-view.trackDebuggers`, `mcu-debug.rtos-views.trackDebuggers`) and activates them automatically, so the Memory, RTOS, and Peripheral views work with the embedded debugger out of the box.
+- Cortex-Debug settings are now grouped into the upstream sections (Debugger, GNU Tools, GDB Servers, Miscellaneous), and setting values under `cortex-debug.*` are honored by the embedded core (previously they were read from a mismatched section and silently ignored).
+- IntelliSense configurations are now generated for sketches already present in the workspace at startup, instead of waiting until a `.ino` file is opened or saved.
+- `scripts/merge-cortex-manifest.js` is now idempotent: it strips previously merged core contributions before re-merging, preserves the extension's own language and grammar contributions, and copies the core's extension dependencies into the host manifest.
+
+### Removed
+
+- The built-in RTOS bottom panel, Cortex Peripherals view, and Cortex Registers view, together with their commands and the `cortex-debug.showRTOS` setting — superseded by the mcu-debug extensions (`xRTOS` panel, `XPeripherals` view, MEMORY panel).
+- The startup prompt offering to install the mcu-debug companion extensions. Missing companions are now only noted in the output channel; Visual Studio Code already installs extension dependencies when VS Arduino is installed from a store.
+- Documentation-only assets from the embedded Cortex-Debug core (screenshots and the doc generator), trimming roughly 770 KB from the published package.
+
 ## [2026.8.2]
 
 ### Added

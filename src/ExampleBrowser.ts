@@ -72,6 +72,81 @@ function buildExampleTree(entries: ExampleEntry[], groupByLibrary: boolean): Exa
 export class ExampleBrowser {
     constructor(private cliManager: ArduinoCliManager) {}
 
+    public async pickAndBrowse(): Promise<void> {
+        const sources: (vscode.QuickPickItem & { type: 'core' | 'library' })[] = [
+            { label: '$(circuit-board) Board Package', description: 'Examples bundled with an installed platform', type: 'core' },
+            { label: '$(library) Library', description: 'Examples bundled with an installed library', type: 'library' }
+        ];
+
+        const source = await vscode.window.showQuickPick(sources, {
+            title: 'Open Example Sketch',
+            placeHolder: 'Select where the example sketch comes from'
+        });
+        if (!source) {
+            return;
+        }
+
+        const entries = await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: source.type === 'core' ? 'Loading installed board packages...' : 'Loading installed libraries...',
+            cancellable: false
+        }, async () => {
+            return source.type === 'core'
+                ? this.listCoreEntries()
+                : this.listLibraryEntries();
+        });
+
+        if (entries.length === 0) {
+            vscode.window.showInformationMessage(
+                source.type === 'core'
+                    ? 'No board packages are installed. Open the Board Manager to install one.'
+                    : 'No libraries are installed. Open the Library Manager to install one.'
+            );
+            return;
+        }
+
+        const picked = await vscode.window.showQuickPick(entries, {
+            title: source.type === 'core' ? 'Open Example Sketch: Board Package' : 'Open Example Sketch: Library',
+            placeHolder: source.type === 'core' ? 'Select an installed board package' : 'Select an installed library',
+            matchOnDetail: true
+        });
+        if (!picked) {
+            return;
+        }
+
+        await this.browse(picked.itemName, source.type);
+    }
+
+    private async listCoreEntries(): Promise<(vscode.QuickPickItem & { itemName: string })[]> {
+        const platforms = await this.cliManager.listInstalledCores();
+        return platforms
+            .filter((platform: any) => platform?.id)
+            .map((platform: any) => {
+                const release = platform.releases?.[platform.installed_version];
+                return {
+                    label: `$(circuit-board) ${release?.name || platform.id}`,
+                    description: platform.installed_version,
+                    detail: platform.id,
+                    itemName: platform.id
+                };
+            })
+            .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+    }
+
+    private async listLibraryEntries(): Promise<(vscode.QuickPickItem & { itemName: string })[]> {
+        const installed = await this.cliManager.listInstalledLibraries();
+        return installed
+            .map((entry: any) => entry.library ?? entry)
+            .filter((library: any) => library?.name)
+            .map((library: any) => ({
+                label: `$(library) ${library.name}`,
+                description: library.version,
+                detail: library.author || library.sentence,
+                itemName: library.name
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+    }
+
     public async browse(itemName: string, type: 'library' | 'core'): Promise<void> {
         const entries = await vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,

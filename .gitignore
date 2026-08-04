@@ -3,6 +3,7 @@ out/
 .vscode-test/
 .claude/
 *.vsix
+CLAUDE.md
 
 # Local-only design sources — media/ bundles are committed instead
 v0_Screens/

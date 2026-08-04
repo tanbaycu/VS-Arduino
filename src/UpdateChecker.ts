@@ -75,14 +75,14 @@ export class UpdateChecker {
                 try {
                     await this.cliManager.upgradeCore(board.id);
                 } catch (error) {
-                    this.outputChannel.appendLine(`Failed to upgrade board package ${board.name}: ${error}`);
+                    this.outputChannel.appendLine(`[Update] Failed to upgrade board package ${board.name}: ${error}`);
                 }
             }
             for (const lib of libs) {
                 try {
                     await this.cliManager.upgradeLibrary(lib.id);
                 } catch (error) {
-                    this.outputChannel.appendLine(`Failed to upgrade library ${lib.name}: ${error}`);
+                    this.outputChannel.appendLine(`[Update] Failed to upgrade library ${lib.name}: ${error}`);
                 }
             }
         });
