@@ -4,6 +4,19 @@ All notable changes to the **VS Arduino** extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026.8.5]
+
+### Fixed
+
+- **Hardware debugging works again on stock Arduino ARM boards.** The Cortex-Debug core shipped in 2026.8.4 (1.12.1) refuses to start when GDB's major version is below 9, and Arduino's official `arm-none-eabi-gcc 7-2017q4` toolchain — used by SAMD boards such as the Zero, MKR family, and Nano 33 IoT — bundles GDB 8.0.50. Every debug session on those boards failed with *"GDB major version should be >= 9"*. The embedded core is reverted to 1.12.1's predecessor, **1.5.1**, which only logs a deprecation warning on GDB 8 and keeps debugging.
+
+### Changed
+
+- The debugging views are provided by the embedded core again (**Cortex Peripherals**, **Cortex Registers**, **RTOS** panel, memory viewer, disassembly), so no companion extension is required. The **mcu-debug** extension dependencies introduced in 2026.8.4 are removed: they are only distributed alongside newer Cortex-Debug releases that mandate GDB 9+, and pinning the core to a version Arduino's toolchain can drive takes priority over the newer view implementations.
+- `scripts/merge-cortex-manifest.js` drops `extensionDependencies` from the manifest when the core declares none, and no longer double-prefixes configuration section titles that already start with `Cortex-Debug`.
+
+Everything added in 2026.8.4 that is unrelated to the debugger — the **Open Example Sketch** and **Run arduino-cli Command** commands, colored output, and the separate `VS Arduino: IntelliSense` channel — is unchanged.
+
 ## [2026.8.4]
 
 ### Added

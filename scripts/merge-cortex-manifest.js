@@ -101,12 +101,17 @@ const hostConfig = Array.isArray(host.contributes.configuration)
 const coreConfig = Array.isArray(core.contributes.configuration)
   ? core.contributes.configuration
   : [core.contributes.configuration];
-host.contributes.configuration = [
-  hostConfig,
-  ...coreConfig.map((section) => ({ ...section, title: section.title ? `Cortex-Debug: ${section.title}` : 'Cortex-Debug' })),
-];
+const sectionTitle = (title) => {
+  if (!title) return 'Cortex-Debug';
+  return /^cortex-debug/i.test(title) ? title : `Cortex-Debug: ${title}`;
+};
+host.contributes.configuration = [hostConfig, ...coreConfig.map((section) => ({ ...section, title: sectionTitle(section.title) }))];
 
-host.extensionDependencies = core.extensionDependencies || [];
+if (core.extensionDependencies && core.extensionDependencies.length > 0) {
+  host.extensionDependencies = core.extensionDependencies;
+} else {
+  delete host.extensionDependencies;
+}
 
 host.activationEvents = [
   'onDebugResolve:arduino',

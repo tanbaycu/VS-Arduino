@@ -55,9 +55,10 @@
 - 一键**导出 CSV**,便于离线分析。
 
 ### 硬件调试
-- 扩展内置 **Cortex-Debug** 调试引擎,并搭配 **mcu-debug** 配套扩展(自动安装)提供调试视图。
+- 扩展内置 **Cortex-Debug** 调试引擎 — 无需安装任何配套扩展。
 - 点击 *Debug Sketch*,VS Arduino 会自动解析工具链、GDB 服务器和 SVD 文件,并精确停在草图的 `setup()` 函数处。
-- 完整的调试工具:**Peripherals (SVD)**、**Memory**、**Disassembly**、**Live Watch** 和 **RTOS** 视图,CPU 寄存器显示在 Variables 面板中。
+- 完整的调试工具:**Peripherals (SVD)**、**Registers**、**Memory**、**Disassembly** 和 **RTOS** 视图。
+- 调试引擎特意锁定在可搭配 Arduino 官方 ARM 工具链所带 GDB 8 的版本,因此原装 SAMD 开发板可直接调试。
 
 ### 开发板与库管理器
 - 通过现代化界面搜索、安装、更新、降级和卸载平台与库。
@@ -121,7 +122,7 @@
 | `vs-arduino.checkForUpdates` | 启动时检查已安装开发板与库的更新 | `true` |
 | `vs-arduino.ignoredUpdates` | 不接收更新通知的开发板与库 | `[]` |
 
-高级调试行为(工具链路径、GDB 服务器、寄存器显示格式、Live Watch)可在 **Cortex-Debug** 设置分区中调整;调试视图的设置位于 **mcu-debug** 分区。
+高级调试行为(工具链路径、GDB 服务器、寄存器显示格式、RTOS 面板)可在 **Cortex-Debug** 设置分区中调整。
 
 ## 命令与快捷键
 

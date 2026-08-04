@@ -55,9 +55,10 @@
 - One-click **CSV export** for offline analysis.
 
 ### Hardware Debugging
-- An embedded **Cortex-Debug** engine ships inside the extension, paired with the **mcu-debug** companion extensions (installed automatically) for the debugging views.
+- An embedded **Cortex-Debug** engine ships inside the extension — no companion extensions to install.
 - Press *Debug Sketch* and VS Arduino resolves the toolchain, GDB server, and SVD file automatically, then halts cleanly at your sketch's `setup()` function.
-- Full debug tooling: **Peripherals (SVD)**, **Memory**, **Disassembly**, **Live Watch**, and **RTOS** views, with CPU registers shown in the Variables panel.
+- Full debug tooling: **Peripherals (SVD)**, **Registers**, **Memory**, **Disassembly**, and **RTOS** views.
+- The engine is deliberately pinned to a release that works with the GDB 8 shipped in Arduino's official ARM toolchain, so debugging works on stock SAMD boards out of the box.
 
 ### Board & Library Managers
 - Search, install, update, downgrade, and uninstall platforms and libraries through a modern UI.
@@ -121,7 +122,7 @@ Install from either store:
 | `vs-arduino.checkForUpdates` | Check installed board packages and libraries for updates on startup | `true` |
 | `vs-arduino.ignoredUpdates` | Board packages and libraries excluded from update notifications | `[]` |
 
-Advanced debugging behavior (toolchain paths, GDB server binaries, register formatting, live watch) can be tuned under the **Cortex-Debug** settings sections; the debugging views have their own settings under **mcu-debug**.
+Advanced debugging behavior (toolchain paths, GDB server binaries, register formatting, RTOS panel) can be tuned under the **Cortex-Debug** settings section.
 
 ## Commands & Keybindings
 

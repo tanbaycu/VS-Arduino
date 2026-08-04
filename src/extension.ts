@@ -11,7 +11,7 @@ import { SerialMonitorProvider } from './SerialMonitorProvider';
 import { SerialPlotterProvider } from './SerialPlotterProvider';
 import { ArduinoDebugConfigurationProvider } from './ArduinoDebugConfigurationProvider';
 import { CliCommandRunner } from './CliCommandRunner';
-import { activateCortexDebugCore, deactivateCortexDebugCore, ensureMcuDebugCompanions } from './debugger/CortexDebugCore';
+import { activateCortexDebugCore, deactivateCortexDebugCore } from './debugger/CortexDebugCore';
 
 let outputChannel: vscode.OutputChannel;
 let intelliSenseChannel: vscode.OutputChannel;
@@ -30,10 +30,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     setImmediate(() => {
         activateCortexDebugCore(context, outputChannel);
-
-        ensureMcuDebugCompanions(outputChannel).catch(err => {
-            outputChannel.appendLine(`[Debug] Companion setup failed: ${err instanceof Error ? err.message : String(err)}`);
-        });
 
         const officialCortexDebug = vscode.extensions.getExtension('marus25.cortex-debug');
         if (officialCortexDebug) {

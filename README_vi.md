@@ -55,9 +55,10 @@
 - **Xuất CSV** một chạm để phân tích ngoại tuyến.
 
 ### Gỡ lỗi phần cứng
-- Bộ máy **Cortex-Debug** được nhúng sẵn bên trong extension, kết hợp với bộ extension phụ trợ **mcu-debug** (tự động cài đặt) cho các view gỡ lỗi.
+- Bộ máy **Cortex-Debug** được nhúng sẵn bên trong extension — không cần cài thêm extension phụ trợ nào.
 - Nhấn *Debug Sketch*, VS Arduino tự động xác định toolchain, GDB server và file SVD, rồi dừng gọn gàng tại hàm `setup()` của sketch.
-- Đầy đủ công cụ gỡ lỗi: các view **Peripherals (SVD)**, **Memory**, **Disassembly**, **Live Watch** và **RTOS**; thanh ghi CPU hiển thị trong panel Variables.
+- Đầy đủ công cụ gỡ lỗi: các view **Peripherals (SVD)**, **Registers**, **Memory**, **Disassembly** và **RTOS**.
+- Bộ máy được ghim ở phiên bản chạy được với GDB 8 trong toolchain ARM chính thức của Arduino, nên gỡ lỗi hoạt động ngay trên các board SAMD nguyên bản.
 
 ### Board & Library Manager
 - Tìm kiếm, cài đặt, cập nhật, hạ cấp và gỡ platform lẫn thư viện qua giao diện hiện đại.
@@ -121,7 +122,7 @@ Cài từ một trong hai kho:
 | `vs-arduino.checkForUpdates` | Kiểm tra bản cập nhật cho board và thư viện đã cài khi khởi động | `true` |
 | `vs-arduino.ignoredUpdates` | Danh sách board và thư viện không nhận thông báo cập nhật | `[]` |
 
-Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, định dạng thanh ghi, live watch) có thể tinh chỉnh trong các mục settings **Cortex-Debug**; các view gỡ lỗi có settings riêng trong mục **mcu-debug**.
+Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, định dạng thanh ghi, panel RTOS) có thể tinh chỉnh trong mục settings **Cortex-Debug**.
 
 ## Lệnh & Phím tắt
 
