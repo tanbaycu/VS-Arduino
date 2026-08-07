@@ -2,7 +2,7 @@
   "name": "vs-arduino",
   "displayName": "VS Arduino",
   "description": "Program Arduino directly in VS Code using arduino-cli",
-  "version": "2026.8.5",
+  "version": "2026.8.6",
   "publisher": "HiTECH-Corporation",
   "license": "MIT",
   "author": {
@@ -156,6 +156,18 @@
       {
         "command": "vs-arduino.runCliCommand",
         "title": "VS Arduino: Run arduino-cli Command"
+      },
+      {
+        "command": "vs-arduino.createSnippet",
+        "title": "VS Arduino: Create Snippet"
+      },
+      {
+        "command": "vs-arduino.insertSnippet",
+        "title": "VS Arduino: Insert Snippet"
+      },
+      {
+        "command": "vs-arduino.deleteSnippet",
+        "title": "VS Arduino: Delete Snippet"
       },
       {
         "command": "vs-arduino.contextCompile",
@@ -574,6 +586,12 @@
             "type": "boolean",
             "default": true,
             "description": "Fill newly created .ino files with the standard scaffold."
+          },
+          "vs-arduino.inoScaffoldTemplate": {
+            "type": "string",
+            "editPresentation": "multilineText",
+            "default": "void setup() {\n    \n}\n\nvoid loop() {\n    \n}\n",
+            "description": "Template for new .ino files. Used when vs-arduino.inoScaffolding is enabled."
           },
           "vs-arduino.ignoredUpdates": {
             "type": "array",
@@ -3193,6 +3211,11 @@
         "command": "cortex-debug.toggleVariableHexFormat",
         "key": "ctrl+shift+x",
         "when": "debugType == vs-arduino-cortex-debug"
+      },
+      {
+        "command": "vs-arduino.insertSnippet",
+        "key": "ctrl+shift+i",
+        "when": "editorFocus"
       }
     ],
     "languages": [

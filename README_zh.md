@@ -119,6 +119,8 @@
 | `vs-arduino.baudRate` | 串口监视器和绘图器的默认波特率 | `"115200"` |
 | `vs-arduino.exampleOpenTarget` | 打开示例程序的位置:`ask`、`newWindow` 或 `currentWindow` | `"ask"` |
 | `vs-arduino.exampleOpenAskToSetDefault` | 是否询问将所选窗口设为默认 | `true` |
+| `vs-arduino.inoScaffolding` | 为新建 `.ino` 文件填充脚手架代码 | `true` |
+| `vs-arduino.inoScaffoldTemplate` | 新建 `.ino` 文件的模板内容（多行字符串）。在 Settings UI 或 `settings.json` 中编辑。留空 = 使用默认 `setup()`/`loop()` | `""` |
 | `vs-arduino.checkForUpdates` | 启动时检查已安装开发板与库的更新 | `true` |
 | `vs-arduino.ignoredUpdates` | 不接收更新通知的开发板与库 | `[]` |
 
@@ -139,12 +141,16 @@
 | `VS Arduino: Open Serial Plotter` | 打开串口绘图器 |
 | `VS Arduino: Open Example Sketch` | 浏览已安装开发板包或库中的示例程序 |
 | `VS Arduino: Run arduino-cli Command` | 运行任意 `arduino-cli` 命令并在输出通道查看日志 |
+| `VS Arduino: Create Snippet` | 将当前选中内容（或任意文本）保存为可复用的命名代码片段 |
+| `VS Arduino: Insert Snippet` | 从已保存片段中选择并插入到光标处 |
+| `VS Arduino: Delete Snippet` | 删除已保存的代码片段 |
 | `VS Arduino: Debug Sketch` | 开始硬件调试会话 |
 | `Open VS Arduino` | 聚焦活动栏中的 VS Arduino 视图 |
 
 | 快捷键 | 功能 |
 | --- | --- |
 | `Ctrl+Shift+X`(调试会话期间) | 切换 Variables 窗口的十六进制显示 |
+| `Ctrl+Shift+I`（编辑器有焦点时） | 将已保存的代码片段插入光标处 |
 
 其他调试命令(内存查看器、反汇编、外设刷新、RTOS 面板)会在调试会话进行时出现在上下文菜单中。
 

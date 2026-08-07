@@ -119,6 +119,8 @@ Install from either store:
 | `vs-arduino.baudRate` | Default baud rate for Serial Monitor and Plotter | `"115200"` |
 | `vs-arduino.exampleOpenTarget` | Where to open example sketches: `ask`, `newWindow`, or `currentWindow` | `"ask"` |
 | `vs-arduino.exampleOpenAskToSetDefault` | Offer to remember the chosen window as the default | `true` |
+| `vs-arduino.inoScaffolding` | Fill newly created `.ino` files with a scaffold | `true` |
+| `vs-arduino.inoScaffoldTemplate` | Template content for new `.ino` files (multiline string). Edit in Settings UI or `settings.json`. Empty = use default `setup()`/`loop()` | `""` |
 | `vs-arduino.checkForUpdates` | Check installed board packages and libraries for updates on startup | `true` |
 | `vs-arduino.ignoredUpdates` | Board packages and libraries excluded from update notifications | `[]` |
 
@@ -139,12 +141,16 @@ Advanced debugging behavior (toolchain paths, GDB server binaries, register form
 | `VS Arduino: Open Serial Plotter` | Open the Serial Plotter |
 | `VS Arduino: Open Example Sketch` | Browse examples from an installed board package or library |
 | `VS Arduino: Run arduino-cli Command` | Run any `arduino-cli` command and stream it into the output channel |
+| `VS Arduino: Create Snippet` | Save the current selection (or any text) as a named reusable snippet |
+| `VS Arduino: Insert Snippet` | Pick a saved snippet and insert it at the cursor |
+| `VS Arduino: Delete Snippet` | Remove a saved snippet |
 | `VS Arduino: Debug Sketch` | Start a hardware debug session |
 | `Open VS Arduino` | Focus the VS Arduino activity-bar view |
 
 | Keybinding | Action |
 | --- | --- |
 | `Ctrl+Shift+X` (during a debug session) | Toggle hex display in the Variables window |
+| `Ctrl+Shift+I` (editor focus) | Insert a saved snippet at the cursor |
 
 Additional debug commands (memory viewer, disassembly, peripheral refresh, RTOS panel) appear in context menus while a debug session is active.
 

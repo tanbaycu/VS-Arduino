@@ -4,6 +4,13 @@ All notable changes to the **VS Arduino** extension are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [2026.8.6]
+
+### Added
+
+- **Snippets.** Save and reuse code fragments across any sketch via three new commands: **`VS Arduino: Create Snippet`** (create or overwrite a named snippet — pre-fills the body from the current selection), **`VS Arduino: Insert Snippet`** (pick from a list and insert at the cursor with full VS Code snippet tab-stop support: `$1`, `${1:placeholder}`, etc.), and **`VS Arduino: Delete Snippet`**. Snippets are stored in global extension state and persist across sessions and workspaces. The keybinding `Ctrl+Shift+I` (when an editor has focus) triggers insert.
+- **Custom `.ino` scaffold template.** The `vs-arduino.inoScaffoldTemplate` setting (multiline string) lets you replace the default `setup()`/`loop()` boilerplate with any starting code. Edit it directly in Settings UI (a textarea is shown) or in `settings.json`. Leave it empty to keep the default. The existing `vs-arduino.inoScaffolding` flag still acts as the on/off switch.
+
 ## [2026.8.5]
 
 ### Fixed

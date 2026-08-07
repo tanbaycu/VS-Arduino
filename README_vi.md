@@ -119,6 +119,8 @@ Cài từ một trong hai kho:
 | `vs-arduino.baudRate` | Tốc độ baud mặc định cho Serial Monitor và Plotter | `"115200"` |
 | `vs-arduino.exampleOpenTarget` | Nơi mở sketch ví dụ: `ask`, `newWindow` hoặc `currentWindow` | `"ask"` |
 | `vs-arduino.exampleOpenAskToSetDefault` | Hỏi có đặt cửa sổ vừa chọn làm mặc định hay không | `true` |
+| `vs-arduino.inoScaffolding` | Điền scaffold khi tạo file `.ino` mới | `true` |
+| `vs-arduino.inoScaffoldTemplate` | Nội dung template cho file `.ino` mới (chuỗi nhiều dòng). Chỉnh trong Settings UI hoặc `settings.json`. Để trống = dùng `setup()`/`loop()` mặc định | `""` |
 | `vs-arduino.checkForUpdates` | Kiểm tra bản cập nhật cho board và thư viện đã cài khi khởi động | `true` |
 | `vs-arduino.ignoredUpdates` | Danh sách board và thư viện không nhận thông báo cập nhật | `[]` |
 
@@ -139,12 +141,16 @@ Các hành vi gỡ lỗi nâng cao (đường dẫn toolchain, GDB server, đị
 | `VS Arduino: Open Serial Plotter` | Mở Serial Plotter |
 | `VS Arduino: Open Example Sketch` | Duyệt ví dụ từ board package hoặc thư viện đã cài |
 | `VS Arduino: Run arduino-cli Command` | Chạy lệnh `arduino-cli` bất kỳ và xem log trong output |
+| `VS Arduino: Create Snippet` | Lưu đoạn code đang chọn (hoặc bất kỳ nội dung nào) thành snippet tái sử dụng |
+| `VS Arduino: Insert Snippet` | Chọn snippet đã lưu và chèn vào vị trí con trỏ |
+| `VS Arduino: Delete Snippet` | Xoá snippet đã lưu |
 | `VS Arduino: Debug Sketch` | Bắt đầu phiên gỡ lỗi phần cứng |
 | `Open VS Arduino` | Mở view VS Arduino trên Activity Bar |
 
 | Phím tắt | Chức năng |
 | --- | --- |
 | `Ctrl+Shift+X` (trong phiên debug) | Bật/tắt hiển thị hex trong cửa sổ Variables |
+| `Ctrl+Shift+I` (khi editor có focus) | Chèn snippet đã lưu vào vị trí con trỏ |
 
 Các lệnh gỡ lỗi bổ sung (xem bộ nhớ, disassembly, làm mới peripheral, panel RTOS) xuất hiện trong menu ngữ cảnh khi phiên debug đang chạy.
 

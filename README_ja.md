@@ -119,6 +119,8 @@
 | `vs-arduino.baudRate` | Serial Monitor / Plotter の既定ボーレート | `"115200"` |
 | `vs-arduino.exampleOpenTarget` | サンプルスケッチを開く場所: `ask` / `newWindow` / `currentWindow` | `"ask"` |
 | `vs-arduino.exampleOpenAskToSetDefault` | 選んだウィンドウを既定にするか確認する | `true` |
+| `vs-arduino.inoScaffolding` | 新しい `.ino` ファイルにスキャフォールドを挿入する | `true` |
+| `vs-arduino.inoScaffoldTemplate` | 新しい `.ino` ファイルのテンプレート内容（複数行テキスト）。Settings UI または `settings.json` で編集。空欄 = デフォルト `setup()`/`loop()` を使用 | `""` |
 | `vs-arduino.checkForUpdates` | 起動時にボードパッケージとライブラリの更新を確認する | `true` |
 | `vs-arduino.ignoredUpdates` | 更新通知の対象から除外するボードパッケージとライブラリ | `[]` |
 
@@ -139,12 +141,16 @@
 | `VS Arduino: Open Serial Plotter` | シリアルプロッターを開く |
 | `VS Arduino: Open Example Sketch` | インストール済みのボードパッケージ / ライブラリのサンプルを辿る |
 | `VS Arduino: Run arduino-cli Command` | 任意の `arduino-cli` コマンドを実行し出力チャンネルに表示 |
+| `VS Arduino: Create Snippet` | 現在の選択（または任意のテキスト）を名前付きスニペットとして保存 |
+| `VS Arduino: Insert Snippet` | 保存済みスニペットを選択してカーソル位置に挿入 |
+| `VS Arduino: Delete Snippet` | 保存済みスニペットを削除 |
 | `VS Arduino: Debug Sketch` | ハードウェアデバッグセッションを開始 |
 | `Open VS Arduino` | アクティビティバーの VS Arduino ビューを開く |
 
 | キーバインド | 動作 |
 | --- | --- |
 | `Ctrl+Shift+X`(デバッグセッション中) | Variables ウィンドウの 16 進表示を切り替え |
+| `Ctrl+Shift+I`（エディタにフォーカス中） | 保存済みスニペットをカーソル位置に挿入 |
 
 その他のデバッグコマンド(メモリビューアー、逆アセンブリ、ペリフェラル更新、RTOS パネル)はデバッグセッション中のコンテキストメニューに表示されます。
 

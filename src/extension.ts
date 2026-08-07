@@ -11,6 +11,7 @@ import { SerialMonitorProvider } from './SerialMonitorProvider';
 import { SerialPlotterProvider } from './SerialPlotterProvider';
 import { ArduinoDebugConfigurationProvider } from './ArduinoDebugConfigurationProvider';
 import { CliCommandRunner } from './CliCommandRunner';
+import { SnippetManager } from './SnippetManager';
 import { activateCortexDebugCore, deactivateCortexDebugCore } from './debugger/CortexDebugCore';
 
 let outputChannel: vscode.OutputChannel;
@@ -20,7 +21,14 @@ let statusBarPort: vscode.StatusBarItem;
 let controlPanelProvider: ControlPanelProvider;
 
 const OUTPUT_LANGUAGE_ID = 'vs-arduino-output';
-const SKETCH_SCAFFOLD = 'void setup() {\n    \n}\n\nvoid loop() {\n    \n}\n';
+const DEFAULT_SCAFFOLD = 'void setup() {\n    \n}\n\nvoid loop() {\n    \n}\n';
+
+function getScaffold(): string {
+    const config = vscode.workspace.getConfiguration('vs-arduino');
+    if (!config.get<boolean>('inoScaffolding', true)) { return ''; }
+    const template = config.get<string>('inoScaffoldTemplate', '');
+    return template.length > 0 ? template : DEFAULT_SCAFFOLD;
+}
 
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel('VS Arduino', OUTPUT_LANGUAGE_ID);
@@ -253,6 +261,17 @@ export function activate(context: vscode.ExtensionContext) {
     const cliCommandRunner = new CliCommandRunner(context, outputChannel, cliManager);
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.runCliCommand', async () => {
         await cliCommandRunner.run();
+    }));
+
+    const snippetManager = new SnippetManager(context);
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.createSnippet', async () => {
+        await snippetManager.createSnippet();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.insertSnippet', async () => {
+        await snippetManager.insertSnippet();
+    }));
+    context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.deleteSnippet', async () => {
+        await snippetManager.deleteSnippet();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('vs-arduino.openSerialMonitor', () => {
@@ -498,7 +517,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 const content = await vscode.workspace.fs.readFile(file);
                 if (content.byteLength === 0) {
-                    await vscode.workspace.fs.writeFile(file, Buffer.from(SKETCH_SCAFFOLD, 'utf8'));
+                    await vscode.workspace.fs.writeFile(file, Buffer.from(getScaffold(), 'utf8'));
                 }
             } catch {
             }
@@ -560,7 +579,7 @@ export function activate(context: vscode.ExtensionContext) {
         } catch {
         }
 
-        const scaffold = vscode.workspace.getConfiguration('vs-arduino').get<boolean>('inoScaffolding', true) ? SKETCH_SCAFFOLD : '';
+        const scaffold = getScaffold();
 
         try {
             await vscode.workspace.fs.createDirectory(vscode.Uri.file(sketchDir));
